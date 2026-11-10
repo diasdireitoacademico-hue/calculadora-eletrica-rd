@@ -209,5 +209,9 @@ renderSegments();display();
   function closeInstall(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');(previousFocus||button).focus();}
   button.addEventListener('click',openInstall);close.addEventListener('click',closeInstall);done.addEventListener('click',closeInstall);modal.addEventListener('click',event=>{if(event.target===modal)closeInstall();});
   window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();installEvent=event;updateState();});promptButton.addEventListener('click',async()=>{if(!installEvent)return;const pending=installEvent;installEvent=null;promptButton.hidden=true;pending.prompt();try{await pending.userChoice;}catch(e){}updateState();});window.addEventListener('appinstalled',()=>{installEvent=null;updateState();closeInstall();});window.addEventListener('online',updateNet);window.addEventListener('offline',updateNet);updateNet();updateState();
-  if('serviceWorker'in navigator&&window.isSecureContext&&location.protocol!=='file:')window.addEventListener('load',async()=>{try{const registration=await navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'});registration.update().catch(()=>{});}catch(error){console.warn('Cache offline não disponível neste navegador:',error);}});
+  if('serviceWorker'in navigator&&window.isSecureContext&&location.protocol!=='file:'){
+    let refreshing=false;
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{if(refreshing)return;refreshing=true;window.location.reload();});
+    window.addEventListener('load',async()=>{try{const registration=await navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'});await registration.update();}catch(error){console.warn('Cache offline não disponível neste navegador:',error);}});
+  }
 })();

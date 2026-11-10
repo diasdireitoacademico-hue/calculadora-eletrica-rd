@@ -1,6 +1,6 @@
-/* Calculadora Elétrica RD | offline shell | v1.1.0 */
+/* Calculadora Elétrica RD | offline shell | v1.1.1 */
 'use strict';
-const CACHE = 'calculadora-rd-shell-v1.1.0';
+const CACHE = 'calculadora-rd-shell-v1.1.1';
 const ASSETS = [
   './index.html',
   './app.js',
@@ -31,7 +31,7 @@ self.addEventListener('fetch', (event) => {
   if (req.mode === 'navigate') {
     event.respondWith((async () => {
       try {
-        const response = await fetch(req);
+        const response = await fetch(new Request(req, {cache:'reload'}));
         if (response.ok) {
           const cache = await caches.open(CACHE);
           await cache.put(new URL('./index.html', self.registration.scope).href, response.clone());
