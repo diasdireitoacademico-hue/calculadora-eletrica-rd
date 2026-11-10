@@ -1,6 +1,6 @@
 'use strict';
 
-// Calculadora Elétrica RD PWA 1.1
+// Calculadora Elétrica RD PWA 1.2
 // Dados de ampacidade: tabelas 36 e 37 da ABNT NBR 5410:2004.
 const SECTIONS=[1.5,2.5,4,6,10,16,25,35,50,70,95,120,150,185,240];
 const BREAKERS=[6,10,16,20,25,32,40,50,63,80,100,125,160,200,250,315,400];
@@ -14,7 +14,7 @@ const TEMP={pvc:{20:1.12,25:1.06,30:1,35:.94,40:.87,45:.79,50:.71,55:.61,60:.50}
 const GROUP={bundle:{1:1,2:.8,3:.70,4:.65,5:.60,6:.57,7:.54,8:.52,9:.50,12:.45,16:.41,20:.38},wall:{1:1,2:.85,3:.79,4:.75,5:.73,6:.72,7:.72,8:.71,9:.70}};
 const $=id=>document.getElementById(id);
 const fieldIds=['projectName','circuitName','power','voltage','pf','length','material','insulation','section','method','ambient','group','arrangement','limit','breaker'];
-const defaultValues={projectName:'Meu projeto',circuitName:'Circuito 1',power:'5500',voltage:'220',pf:'0.92',length:'30',material:'cu',insulation:'pvc',section:'6',method:'B1',ambient:'30',group:'1',arrangement:'bundle',limit:'4',breaker:'32',system:'two'};
+const defaultValues={projectName:'Meu projeto',circuitName:'Circuito 1',power:'5500',voltage:'220',pf:'0.92',length:'30',material:'cu',insulation:'pvc',section:'auto',method:'B1',ambient:'30',group:'1',arrangement:'bundle',limit:'4',breaker:'auto',system:'two'};
 let currentData=null,memory='',segments=[];
 
 const fr=(v,n=2)=>Number.isFinite(v)?v.toLocaleString('pt-BR',{minimumFractionDigits:n,maximumFractionDigits:n}):'—';
@@ -25,8 +25,8 @@ const selectOptions=(items,selected)=>items.map(([value,label])=>`<option value=
 
 function optionSize(){
   const material=$('material').value,previous=$('section').value||defaultValues.section;
-  $('section').innerHTML=sizeOptions(material,previous);
-  if(!sizesFor(material).some(n=>String(n)===String(previous)))$('section').value=material==='al'?'16':'6';
+  $('section').innerHTML=`<option value="auto"${previous==='auto'?' selected':''}>Automática — aguardando cálculo</option>`+sizeOptions(material,previous);
+  if(previous!=='auto'&&!sizesFor(material).some(n=>String(n)===String(previous)))$('section').value=material==='al'?'16':'6';
 }
 
 function optionArrangement(){
@@ -84,29 +84,34 @@ function snapshotValues(){
 
 function collect(){
   const v=snapshotValues();
-  const p=Number(v.power),u=Number(v.voltage),fp=Number(v.pf),length=Number(v.length),section=Number(v.section),breaker=Number(v.breaker),errors=[];
+  const sectionAuto=v.section==='auto',breakerAuto=v.breaker==='auto';
+  const p=Number(v.power),u=Number(v.voltage),fp=Number(v.pf),length=Number(v.length),errors=[];
   if(!Number.isFinite(p)||p<=0)errors.push('Informe uma potência positiva.');
   if(!Number.isFinite(u)||u<=0||u>1000)errors.push('A tensão deve estar acima de 0 V e até 1.000 V.');
   if(!Number.isFinite(fp)||fp<=0||fp>1)errors.push('O fator de potência deve ser maior que 0 e no máximo 1.');
   if(!Number.isFinite(length)||length<0)errors.push('O comprimento final não pode ser negativo.');
-  if(!(section>0))errors.push('Selecione uma seção válida.');
-  if(!Number.isFinite(breaker)||breaker<=0)errors.push('Selecione um disjuntor válido.');
+  if(!sectionAuto&&!(Number(v.section)>0))errors.push('Selecione uma seção válida.');
+  if(!breakerAuto&&!(Number(v.breaker)>0))errors.push('Selecione um disjuntor válido.');
   if(errors.length)return {errors};
   const k=v.system==='three'?Math.sqrt(3):1,ib=p/(k*u*fp);
-  const primary=calculateSegment(v,ib,fp,u,v.system);
-  if(primary.errors.length)return {errors:['Trecho final: '+primary.errors.join(', ')+'.']};
   const upstream=segments.map((segment,index)=>({config:segment,result:calculateSegment(segment,ib,fp,u,v.system),index}));
   const segmentErrors=upstream.filter(x=>x.result.errors.length).map(x=>`${x.config.name||`Trecho ${x.index+1}`}: ${x.result.errors.join(', ')}.`);
   if(segmentErrors.length)return {errors:segmentErrors};
-  const upstreamDelta=upstream.reduce((sum,x)=>sum+x.result.delta,0),delta=primary.delta+upstreamDelta,dropPercent=100*delta/u;
-  const allResults=[primary,...upstream.map(x=>x.result)],minIz=Math.min(...allResults.map(x=>x.iz)),ampOK=allResults.every(x=>x.ampOK),dropOK=dropPercent<=Number(v.limit),breakerOK=ib<=breaker&&breaker<=minIz;
+  const upstreamDelta=upstream.reduce((sum,x)=>sum+x.result.delta,0);
   let recommendedSection=null;
   for(const candidate of sizesFor(v.material)){
     const trial=calculateSegment({...v,section:String(candidate)},ib,fp,u,v.system);
     if(!trial.errors.length&&trial.ampOK&&100*(trial.delta+upstreamDelta)/u<=Number(v.limit)){recommendedSection=candidate;break;}
   }
+  if(sectionAuto&&!recommendedSection)return {errors:['Não há seção disponível que atenda simultaneamente à ampacidade e ao limite de queda configurado.']};
+  const effectiveSection=sectionAuto?recommendedSection:Number(v.section);
+  const primary=calculateSegment({...v,section:String(effectiveSection)},ib,fp,u,v.system);
+  if(primary.errors.length)return {errors:['Trecho final: '+primary.errors.join(', ')+'.']};
+  const delta=primary.delta+upstreamDelta,dropPercent=100*delta/u;
+  const allResults=[primary,...upstream.map(x=>x.result)],minIz=Math.min(...allResults.map(x=>x.iz)),ampOK=allResults.every(x=>x.ampOK),dropOK=dropPercent<=Number(v.limit);
   const recommendedBreaker=BREAKERS.find(value=>value>=ib&&value<=minIz)||null;
-  return {v,p,u,fp,ib,breaker,primary,upstream,upstreamDelta,delta,dropPercent,terminalDropPercent:100*primary.delta/u,loadVoltage:u-delta,minIz,ratio:100*ib/minIz,ampOK,dropOK,breakerOK,recommendedSection,recommendedBreaker,errors:[]};
+  const breaker=breakerAuto?recommendedBreaker:Number(v.breaker),breakerOK=Number.isFinite(breaker)&&ib<=breaker&&breaker<=minIz;
+  return {v,p,u,fp,ib,breaker,sectionAuto,breakerAuto,primary,upstream,upstreamDelta,delta,dropPercent,terminalDropPercent:100*primary.delta/u,loadVoltage:u-delta,minIz,ratio:100*ib/minIz,ampOK,dropOK,breakerOK,recommendedSection,recommendedBreaker,errors:[]};
 }
 
 function status(stateId,valid,text){const el=$(stateId);el.className='state '+(valid?'good':'bad');el.innerHTML='<span class="dot"></span><span></span>';el.lastChild.textContent=text;}
@@ -120,7 +125,12 @@ function display(){
     ['ampBar','dropBar'].forEach(id=>$(id).style.width='0');
     ['ampState','dropState','breakerState'].forEach(id=>{$(id).className='state neutral';$(id).textContent='Parâmetros inválidos';});
     $('summary').className='summary bad';$('summary').innerHTML='<strong>Não foi possível calcular</strong><span>Corrija os parâmetros indicados.</span>';
-    $('applyRecommendation').disabled=true;memory='';$('copyBtn').disabled=$('printBtn').disabled=$('printBtn2').disabled=$('memoryBtn').disabled=true;return;
+    const sectionAuto=$('section').value==='auto',breakerAuto=$('breaker').value==='auto';
+    if($('section').options[0])$('section').options[0].textContent='Automática — aguardando dados';
+    if($('breaker').options[0])$('breaker').options[0].textContent='Automático — aguardando dados';
+    $('sectionModeHint').textContent=sectionAuto?'Modo automático ativo. Corrija os dados para obter a seção.':'Modo manual ativo: a seção escolhida permanecerá fixa.';
+    $('breakerModeHint').textContent=breakerAuto?'Modo automático ativo. Corrija os dados para obter o disjuntor.':'Modo manual ativo: o disjuntor escolhido permanecerá fixo.';
+    $('applyRecommendation').hidden=sectionAuto;$('applyRecommendation').disabled=true;memory='';$('copyBtn').disabled=$('printBtn').disabled=$('printBtn2').disabled=$('memoryBtn').disabled=true;return;
   }
   $('errors').classList.remove('show');$('copyBtn').disabled=$('printBtn').disabled=$('printBtn2').disabled=$('memoryBtn').disabled=false;
   $('ib').textContent=fr(d.ib)+' A';$('iz').textContent=fr(d.primary.iz)+' A';$('dropPct').textContent=fr(d.dropPercent)+'%';$('dropVolt').textContent=fr(d.delta)+' V acumulados';$('loadVoltage').textContent=fr(d.loadVoltage)+' V';
@@ -130,21 +140,25 @@ function display(){
   status('dropState',d.dropOK,d.dropOK?'Queda acumulada dentro do limite configurado.':'Queda acumulada superior ao limite configurado.');
   status('breakerState',d.breakerOK,d.breakerOK?'Relação preliminar Ib ≤ In ≤ Iz atendida em todos os trechos.':'O disjuntor selecionado não atende à relação preliminar Ib ≤ In ≤ Iz.');
   $('iz0Cell').textContent=fr(d.primary.iz0)+' A';$('ftCell').textContent=fr(d.primary.ft);$('fgCell').textContent=fr(d.primary.fg);$('resCell').textContent=fr(d.primary.rKm,4)+' Ω/km';$('terminalDropCell').textContent=fr(d.primary.delta)+' V ('+fr(d.terminalDropPercent)+'%)';$('upstreamDropCell').textContent=fr(d.upstreamDelta)+' V';$('marginCell').textContent=fr(d.minIz-d.ib)+' A';
-  $('recSection').textContent=d.recommendedSection?String(d.recommendedSection).replace('.',',')+' mm²':'Sem solução';$('applyRecommendation').disabled=!d.recommendedSection||Number(d.v.section)===d.recommendedSection;
+  const sectionText=d.recommendedSection?String(d.recommendedSection).replace('.',',')+' mm²':'Sem solução',breakerText=d.recommendedBreaker?d.recommendedBreaker+' A':'Sem solução';
+  $('section').options[0].textContent='Automática — '+sectionText;$('breaker').options[0].textContent='Automático — '+breakerText;
+  $('sectionModeHint').textContent=d.sectionAuto?`Automático ativo: ${sectionText} aplicada e recalculada a cada alteração.`:'Modo manual ativo: a seção escolhida permanecerá fixa.';
+  $('breakerModeHint').textContent=d.breakerAuto?`Automático ativo: ${breakerText} aplicado e recalculado a cada alteração.`:'Modo manual ativo: o disjuntor escolhido permanecerá fixo.';
+  $('recSection').textContent=sectionText;$('applyRecommendation').hidden=d.sectionAuto;$('applyRecommendation').disabled=!d.recommendedSection||Number(d.v.section)===d.recommendedSection;
   $('recBreaker').textContent=d.recommendedBreaker?d.recommendedBreaker+' A':'Sem solução';
   $('recNote').textContent=d.recommendedBreaker?'Menor valor padronizado que atende Ib e a menor Iz calculada.':'Não há disjuntor da lista que atenda à corrente e à menor ampacidade.';
   const good=d.ampOK&&d.dropOK&&d.breakerOK;
   $('summary').className='summary'+(good?'':' bad');$('summary').innerHTML='<strong>'+(good?'Verificações preliminares atendidas':'Uma ou mais verificações não atendidas')+'</strong><span>'+(good?'Ampacidade, queda acumulada e relação Ib ≤ In ≤ Iz atendem à simulação.':'Revise seções, proteção, instalação, agrupamento ou trajeto antes de utilizar a solução.')+'</span>';
   if(d.loadVoltage<0)$('summary').lastChild.textContent+=' A queda calculada supera a tensão nominal: aplicação fora do intervalo útil deste modelo.';
   memory=makeMemory(d);
-  try{localStorage.setItem('calc_eletrica_offline_v11',JSON.stringify({values:d.v,segments}))}catch(e){}
+  try{localStorage.setItem('calc_eletrica_offline_v12',JSON.stringify({values:d.v,segments}))}catch(e){}
 }
 
 function namedGroup(value){return ({'9':'9 a 11','12':'12 a 15','16':'16 a 19','20':'20 ou mais'})[value]||value;}
 function makeRows(d){return [
-  ['Projeto / obra',d.v.projectName||'Não informado'],['Circuito',d.v.circuitName||'Não informado'],['Configuração',d.v.system==='three'?'Trifásico equilibrado':'Dois condutores (F+N / F+F)'],['Potência ativa',fr(d.p)+' W'],['Tensão nominal',fr(d.u)+' V'],['Fator de potência',fr(d.fp)],['Corrente da carga (Ib)',fr(d.ib,3)+' A'],['Trecho final — comprimento',fr(d.primary.length)+' m'],['Trecho final — material',d.v.material==='cu'?'Cobre':'Alumínio'],['Trecho final — isolação',d.v.insulation==='pvc'?'PVC 70 °C':'EPR / XLPE 90 °C'],['Trecho final — seção',fr(d.primary.section)+' mm²'],['Trecho final — método',d.v.method],['Trecho final — temperatura',d.v.ambient+' °C'],['Trecho final — agrupamento',namedGroup(d.v.group)],['Capacidade tabelada final (Iz₀)',fr(d.primary.iz0,3)+' A'],['Capacidade corrigida final (Iz)',fr(d.primary.iz,3)+' A'],['Menor Iz do percurso',fr(d.minIz,3)+' A'],['Disjuntor selecionado (In)',fr(d.breaker,0)+' A'],['Coordenação Ib ≤ In ≤ Iz',d.breakerOK?'ATENDIDA':'NÃO ATENDIDA'],['Queda no trecho final',fr(d.primary.delta,3)+' V / '+fr(d.terminalDropPercent,3)+'%'],['Queda nos trechos anteriores',fr(d.upstreamDelta,3)+' V'],['Queda acumulada',fr(d.delta,3)+' V / '+fr(d.dropPercent,3)+'%'],['Tensão estimada na carga',fr(d.loadVoltage,3)+' V'],['Limite configurado',d.v.limit+'%'],['Seção automática sugerida',d.recommendedSection?fr(d.recommendedSection)+' mm²':'Sem solução'],['Disjuntor sugerido',d.recommendedBreaker?d.recommendedBreaker+' A':'Sem solução'],['Ampacidade em todos os trechos',d.ampOK?'ATENDIDA':'NÃO ATENDIDA'],['Queda acumulada ≤ limite',d.dropOK?'ATENDIDA':'NÃO ATENDIDA']];}
+  ['Projeto / obra',d.v.projectName||'Não informado'],['Circuito',d.v.circuitName||'Não informado'],['Configuração',d.v.system==='three'?'Trifásico equilibrado':'Dois condutores (F+N / F+F)'],['Potência ativa',fr(d.p)+' W'],['Tensão nominal',fr(d.u)+' V'],['Fator de potência',fr(d.fp)],['Corrente da carga (Ib)',fr(d.ib,3)+' A'],['Trecho final — comprimento',fr(d.primary.length)+' m'],['Trecho final — material',d.v.material==='cu'?'Cobre':'Alumínio'],['Trecho final — isolação',d.v.insulation==='pvc'?'PVC 70 °C':'EPR / XLPE 90 °C'],['Trecho final — seção aplicada',fr(d.primary.section)+' mm² ('+(d.sectionAuto?'automática':'manual')+')'],['Trecho final — método',d.v.method],['Trecho final — temperatura',d.v.ambient+' °C'],['Trecho final — agrupamento',namedGroup(d.v.group)],['Capacidade tabelada final (Iz₀)',fr(d.primary.iz0,3)+' A'],['Capacidade corrigida final (Iz)',fr(d.primary.iz,3)+' A'],['Menor Iz do percurso',fr(d.minIz,3)+' A'],['Disjuntor aplicado (In)',fr(d.breaker,0)+' A ('+(d.breakerAuto?'automático':'manual')+')'],['Coordenação Ib ≤ In ≤ Iz',d.breakerOK?'ATENDIDA':'NÃO ATENDIDA'],['Queda no trecho final',fr(d.primary.delta,3)+' V / '+fr(d.terminalDropPercent,3)+'%'],['Queda nos trechos anteriores',fr(d.upstreamDelta,3)+' V'],['Queda acumulada',fr(d.delta,3)+' V / '+fr(d.dropPercent,3)+'%'],['Tensão estimada na carga',fr(d.loadVoltage,3)+' V'],['Limite configurado',d.v.limit+'%'],['Seção automática sugerida',d.recommendedSection?fr(d.recommendedSection)+' mm²':'Sem solução'],['Disjuntor sugerido',d.recommendedBreaker?d.recommendedBreaker+' A':'Sem solução'],['Ampacidade em todos os trechos',d.ampOK?'ATENDIDA':'NÃO ATENDIDA'],['Queda acumulada ≤ limite',d.dropOK?'ATENDIDA':'NÃO ATENDIDA']];}
 function segmentRows(d){return d.upstream.map(({config,result},index)=>[config.name||`Trecho ${index+1}`,`${fr(result.length)} m • ${config.material==='cu'?'Cu':'Al'} • ${fr(result.section)} mm² • ${config.method} • Iz ${fr(result.iz)} A • ΔU ${fr(result.delta)} V • ${result.ampOK?'OK':'REVISAR'}`]);}
-function makeMemory(d){const lines=['MEMÓRIA DE CÁLCULO ELÉTRICO','Calculadora Elétrica RD — PWA 1.1','Emissão: '+new Date().toLocaleString('pt-BR'),'','DADOS E RESULTADOS',...makeRows(d).map(([k,v])=>k+': '+v)];if(d.upstream.length)lines.push('','TRECHOS ANTERIORES',...segmentRows(d).map(([k,v])=>k+': '+v));lines.push('','FÓRMULAS','Ib = P / (k · U · cosφ), k=1 (dois condutores) ou √3 (trifásico).','Iz = Iz₀ · Ft · Fg.','ΔU total = soma das quedas de todos os trechos.','Verificação preliminar da proteção: Ib ≤ In ≤ menor Iz do percurso.','','PREMISSAS E LIMITAÇÕES','ABNT NBR 5410:2004, tabelas 33, 36, 37, 40 e 42.','A reatância X foi fixada em 0,08 Ω/km, valor estimativo.','A recomendação automática não verifica seção mínima, curto-circuito, poder de interrupção, seletividade, harmônicas, neutro ou dados específicos do fabricante.','A avaliação não substitui dimensionamento técnico completo.');return lines.join('\n');}
+function makeMemory(d){const lines=['MEMÓRIA DE CÁLCULO ELÉTRICO','Calculadora Elétrica RD — PWA 1.2','Emissão: '+new Date().toLocaleString('pt-BR'),'','DADOS E RESULTADOS',...makeRows(d).map(([k,v])=>k+': '+v)];if(d.upstream.length)lines.push('','TRECHOS ANTERIORES',...segmentRows(d).map(([k,v])=>k+': '+v));lines.push('','FÓRMULAS','Ib = P / (k · U · cosφ), k=1 (dois condutores) ou √3 (trifásico).','Iz = Iz₀ · Ft · Fg.','ΔU total = soma das quedas de todos os trechos.','Verificação preliminar da proteção: Ib ≤ In ≤ menor Iz do percurso.','','PREMISSAS E LIMITAÇÕES','ABNT NBR 5410:2004, tabelas 33, 36, 37, 40 e 42.','A reatância X foi fixada em 0,08 Ω/km, valor estimativo.','A recomendação automática não verifica seção mínima, curto-circuito, poder de interrupção, seletividade, harmônicas, neutro ou dados específicos do fabricante.','A avaliação não substitui dimensionamento técnico completo.');return lines.join('\n');}
 
 function preparePrint(){
   if(!currentData||currentData.errors.length)return;
@@ -195,8 +209,8 @@ $('applyRecommendation').addEventListener('click',()=>{if(!currentData?.recommen
 $('resetBtn').addEventListener('click',reset);$('saveBtn').addEventListener('click',saveProject);$('projectsBtn').addEventListener('click',openProjects);$('closeProjects').addEventListener('click',closeProjects);$('saveFromModal').addEventListener('click',()=>{saveProject();renderSavedProjects();});$('projectsModal').addEventListener('click',event=>{if(event.target===$('projectsModal'))closeProjects();});
 $('printBtn').addEventListener('click',printDoc);$('printBtn2').addEventListener('click',printDoc);$('copyBtn').addEventListener('click',copyMemory);$('memoryBtn').addEventListener('click',openMemory);$('closeModal').addEventListener('click',closeMemory);$('modalCopy').addEventListener('click',copyMemory);$('modalPrint').addEventListener('click',printDoc);$('modalBg').addEventListener('click',event=>{if(event.target===$('modalBg'))closeMemory();});document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if($('modalBg').classList.contains('open'))closeMemory();if($('projectsModal').classList.contains('open'))closeProjects();});
 
-let persisted=null;try{persisted=JSON.parse(localStorage.getItem('calc_eletrica_offline_v11')||'null');}catch(e){}
-if(persisted?.values){segments=(persisted.segments||[]).map(normalizeSegment);applyValues(persisted.values);}else{let legacy=null;try{legacy=JSON.parse(localStorage.getItem('calc_eletrica_offline_v1')||'null');}catch(e){}applyValues(legacy&&typeof legacy==='object'?legacy:defaultValues);}
+let persisted=null;try{persisted=JSON.parse(localStorage.getItem('calc_eletrica_offline_v12')||'null');}catch(e){}
+if(persisted?.values){segments=(persisted.segments||[]).map(normalizeSegment);applyValues(persisted.values);}else{let prior=null;try{prior=JSON.parse(localStorage.getItem('calc_eletrica_offline_v11')||'null');}catch(e){}if(prior?.values){segments=(prior.segments||[]).map(normalizeSegment);applyValues({...prior.values,section:'auto',breaker:'auto'});}else{let legacy=null;try{legacy=JSON.parse(localStorage.getItem('calc_eletrica_offline_v1')||'null');}catch(e){}applyValues({...defaultValues,...(legacy&&typeof legacy==='object'?legacy:{}),section:'auto',breaker:'auto'});}}
 renderSegments();display();
 
 // Instalação e atualização do PWA.
@@ -215,3 +229,4 @@ renderSegments();display();
     window.addEventListener('load',async()=>{try{const registration=await navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'});await registration.update();}catch(error){console.warn('Cache offline não disponível neste navegador:',error);}});
   }
 })();
+
