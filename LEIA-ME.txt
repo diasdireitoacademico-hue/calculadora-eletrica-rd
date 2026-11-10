@@ -1,10 +1,11 @@
-# CALCULADORA ELÉTRICA RD — PWA 1.0
+# CALCULADORA ELÉTRICA RD — PWA 1.1
 
 Aplicativo web progressivo, com interface em português, gratuito para uso local, sem bibliotecas externas.
 
 ## Conteúdo do pacote
 
 - `index.html`: interface e cálculos elétricos, inteiramente locais.
+- `app.js`: lógica de cálculo, projetos locais e instalação do PWA.
 - `manifest.json`: dados de instalação do aplicativo.
 - `sw.js`: service worker que mantém arquivos no cache para uso offline.
 - `icons/`: ícones PNG para iPhone, Android e Windows.
@@ -42,6 +43,14 @@ Na pasta extraída, execute:
     python -m http.server 8000
 
 Acesse `http://localhost:8000` no próprio computador. Não basta clicar duas vezes no HTML para testar recursos de instalação PWA. Em uma rede local, o endereço HTTP do computador geralmente não qualifica como contexto seguro no navegador do celular; use HTTPS para testar instalação móvel.
+
+## Novidades da versão 1.1
+
+- Recomendação automática da menor seção que atende à ampacidade e à queda configurada.
+- Sugestão de disjuntor e verificação preliminar da relação Ib ≤ In ≤ Iz.
+- Inclusão de trechos anteriores, com queda acumulada e ampacidade por trecho.
+- Projetos e circuitos salvos apenas no armazenamento local do dispositivo.
+- Relatório ampliado para impressão ou PDF.
 
 ## Restrições técnicas
 
