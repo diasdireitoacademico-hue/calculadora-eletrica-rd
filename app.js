@@ -1,6 +1,6 @@
 'use strict';
 
-// Calculadora Elétrica RD PWA 1.2.1
+// Calculadora Elétrica RD PWA 1.3
 // Dados de ampacidade: tabelas 36 e 37 da ABNT NBR 5410:2004.
 const SECTIONS=[1.5,2.5,4,6,10,16,25,35,50,70,95,120,150,185,240];
 const BREAKERS=[6,10,16,20,25,32,40,50,63,80,100,125,160,200,250,315,400];
@@ -15,6 +15,13 @@ const GROUP={bundle:{1:1,2:.8,3:.70,4:.65,5:.60,6:.57,7:.54,8:.52,9:.50,12:.45,1
 const $=id=>document.getElementById(id);
 const fieldIds=['projectName','circuitName','power','voltage','pf','length','material','insulation','section','method','ambient','group','arrangement','limit','breaker'];
 const defaultValues={projectName:'Meu projeto',circuitName:'Circuito 1',power:'5500',voltage:'220',pf:'0.92',length:'30',material:'cu',insulation:'pvc',section:'auto',method:'B1',ambient:'30',group:'1',arrangement:'bundle',limit:'4',breaker:'auto',system:'two'};
+const PRESETS={
+  lighting:{circuitName:'Iluminação',power:'1000',voltage:'127',pf:'1',system:'two'},
+  outlets:{circuitName:'Tomadas',power:'2200',voltage:'127',pf:'1',system:'two'},
+  shower:{circuitName:'Chuveiro',power:'5500',voltage:'220',pf:'1',system:'two'},
+  air:{circuitName:'Ar-condicionado',power:'1500',voltage:'220',pf:'0.92',system:'two'},
+  motor:{circuitName:'Motor trifásico',power:'7500',voltage:'380',pf:'0.85',system:'three'}
+};
 let currentData=null,memory='',segments=[];
 
 const fr=(v,n=2)=>Number.isFinite(v)?v.toLocaleString('pt-BR',{minimumFractionDigits:n,maximumFractionDigits:n}):'—';
@@ -117,8 +124,28 @@ function collect(){
 function status(stateId,valid,text){const el=$(stateId);el.className='state '+(valid?'good':'bad');el.innerHTML='<span class="dot"></span><span></span>';el.lastChild.textContent=text;}
 function bar(barId,ratio,good){const el=$(barId);el.style.width=Math.max(0,Math.min(100,ratio))+'%';el.className='fill'+(good?'':' bad');}
 
+function renderInlineValidation(){
+  document.querySelectorAll('.field-error').forEach(node=>node.remove());
+  ['power','voltage','pf','length'].forEach(id=>$(id).removeAttribute('aria-invalid'));
+  const mark=(id,message)=>{const el=$(id);el.setAttribute('aria-invalid','true');const note=document.createElement('div');note.className='field-error';note.textContent=message;el.insertAdjacentElement('afterend',note);};
+  const power=Number($('power').value),voltage=Number($('voltage').value),pf=Number($('pf').value),length=Number($('length').value);
+  if(!Number.isFinite(power)||power<=0)mark('power','Informe uma potência maior que zero.');
+  if(!Number.isFinite(voltage)||voltage<=0||voltage>1000)mark('voltage','Use uma tensão acima de 0 V e até 1.000 V.');
+  if(!Number.isFinite(pf)||pf<=0||pf>1)mark('pf','Use um fator de potência maior que 0 e no máximo 1.');
+  if(!Number.isFinite(length)||length<0)mark('length','O comprimento não pode ser negativo.');
+}
+
+function updateMobileSummary(data){
+  const host=$('mobileSummary');
+  if(!data||data.errors?.length){$('mobileSection').textContent='Revise os dados';$('mobileBreaker').textContent='Disjuntor —';$('mobileDrop').textContent='Queda —';host.classList.add('bad');return;}
+  $('mobileSection').textContent='Seção '+fr(data.primary.section).replace(',00','')+' mm²';
+  $('mobileBreaker').textContent='Disjuntor '+fr(data.breaker,0)+' A';
+  $('mobileDrop').textContent='Queda '+fr(data.dropPercent)+'%';
+  host.classList.toggle('bad',!(data.ampOK&&data.dropOK&&data.breakerOK));
+}
+
 function display(){
-  currentData=collect();const d=currentData;
+  renderInlineValidation();currentData=collect();const d=currentData;updateMobileSummary(d);
   if(d.errors.length){
     $('errors').textContent=d.errors.join(' ');$('errors').classList.add('show');
     ['ib','iz','dropPct','dropVolt','loadVoltage','ampRatio','dropRatio','breakerRatio','iz0Cell','ftCell','fgCell','resCell','terminalDropCell','upstreamDropCell','marginCell','recSection','recBreaker'].forEach(id=>$(id).textContent='—');
@@ -158,7 +185,7 @@ function namedGroup(value){return ({'9':'9 a 11','12':'12 a 15','16':'16 a 19','
 function makeRows(d){return [
   ['Projeto / obra',d.v.projectName||'Não informado'],['Circuito',d.v.circuitName||'Não informado'],['Configuração',d.v.system==='three'?'Trifásico equilibrado':'Dois condutores (F+N / F+F)'],['Potência ativa',fr(d.p)+' W'],['Tensão nominal',fr(d.u)+' V'],['Fator de potência',fr(d.fp)],['Corrente da carga (Ib)',fr(d.ib,3)+' A'],['Trecho final — comprimento',fr(d.primary.length)+' m'],['Trecho final — material',d.v.material==='cu'?'Cobre':'Alumínio'],['Trecho final — isolação',d.v.insulation==='pvc'?'PVC 70 °C':'EPR / XLPE 90 °C'],['Trecho final — seção aplicada',fr(d.primary.section)+' mm² ('+(d.sectionAuto?'automática':'manual')+')'],['Trecho final — método',d.v.method],['Trecho final — temperatura',d.v.ambient+' °C'],['Trecho final — agrupamento',namedGroup(d.v.group)],['Capacidade tabelada final (Iz₀)',fr(d.primary.iz0,3)+' A'],['Capacidade corrigida final (Iz)',fr(d.primary.iz,3)+' A'],['Menor Iz do percurso',fr(d.minIz,3)+' A'],['Disjuntor aplicado (In)',fr(d.breaker,0)+' A ('+(d.breakerAuto?'automático':'manual')+')'],['Coordenação Ib ≤ In ≤ Iz',d.breakerOK?'ATENDIDA':'NÃO ATENDIDA'],['Queda no trecho final',fr(d.primary.delta,3)+' V / '+fr(d.terminalDropPercent,3)+'%'],['Queda nos trechos anteriores',fr(d.upstreamDelta,3)+' V'],['Queda acumulada',fr(d.delta,3)+' V / '+fr(d.dropPercent,3)+'%'],['Tensão estimada na carga',fr(d.loadVoltage,3)+' V'],['Limite configurado',d.v.limit+'%'],['Seção automática sugerida',d.recommendedSection?fr(d.recommendedSection)+' mm²':'Sem solução'],['Disjuntor sugerido',d.recommendedBreaker?d.recommendedBreaker+' A':'Sem solução'],['Ampacidade em todos os trechos',d.ampOK?'ATENDIDA':'NÃO ATENDIDA'],['Queda acumulada ≤ limite',d.dropOK?'ATENDIDA':'NÃO ATENDIDA']];}
 function segmentRows(d){return d.upstream.map(({config,result},index)=>[config.name||`Trecho ${index+1}`,`${fr(result.length)} m • ${config.material==='cu'?'Cu':'Al'} • ${fr(result.section)} mm² • ${config.method} • Iz ${fr(result.iz)} A • ΔU ${fr(result.delta)} V • ${result.ampOK?'OK':'REVISAR'}`]);}
-function makeMemory(d){const lines=['MEMÓRIA DE CÁLCULO ELÉTRICO','Calculadora Elétrica RD — PWA 1.2.1','Emissão: '+new Date().toLocaleString('pt-BR'),'','DADOS E RESULTADOS',...makeRows(d).map(([k,v])=>k+': '+v)];if(d.upstream.length)lines.push('','TRECHOS ANTERIORES',...segmentRows(d).map(([k,v])=>k+': '+v));lines.push('','FÓRMULAS','Ib = P / (k · U · cosφ), k=1 (dois condutores) ou √3 (trifásico).','Iz = Iz₀ · Ft · Fg.','ΔU total = soma das quedas de todos os trechos.','Verificação preliminar da proteção: Ib ≤ In ≤ menor Iz do percurso.','','PREMISSAS E LIMITAÇÕES','ABNT NBR 5410:2004, tabelas 33, 36, 37, 40 e 42.','A reatância X foi fixada em 0,08 Ω/km, valor estimativo.','A recomendação automática não verifica seção mínima, curto-circuito, poder de interrupção, seletividade, harmônicas, neutro ou dados específicos do fabricante.','A avaliação não substitui dimensionamento técnico completo.');return lines.join('\n');}
+function makeMemory(d){const lines=['MEMÓRIA DE CÁLCULO ELÉTRICO','Calculadora Elétrica RD — PWA 1.3','Emissão: '+new Date().toLocaleString('pt-BR'),'','DADOS E RESULTADOS',...makeRows(d).map(([k,v])=>k+': '+v)];if(d.upstream.length)lines.push('','TRECHOS ANTERIORES',...segmentRows(d).map(([k,v])=>k+': '+v));lines.push('','FÓRMULAS','Ib = P / (k · U · cosφ), k=1 (dois condutores) ou √3 (trifásico).','Iz = Iz₀ · Ft · Fg.','ΔU total = soma das quedas de todos os trechos.','Verificação preliminar da proteção: Ib ≤ In ≤ menor Iz do percurso.','','PREMISSAS E LIMITAÇÕES','ABNT NBR 5410:2004, tabelas 33, 36, 37, 40 e 42.','A reatância X foi fixada em 0,08 Ω/km, valor estimativo.','A recomendação automática não verifica seção mínima, curto-circuito, poder de interrupção, seletividade, harmônicas, neutro ou dados específicos do fabricante.','A avaliação não substitui dimensionamento técnico completo.');return lines.join('\n');}
 
 function preparePrint(){
   if(!currentData||currentData.errors.length)return;
@@ -198,20 +225,42 @@ function deleteProject(id){const item=getProjects().find(value=>value.id===id);i
 function openProjects(){renderSavedProjects();$('projectsModal').classList.add('open');$('projectsModal').setAttribute('aria-hidden','false');$('closeProjects').focus();}
 function closeProjects(){$('projectsModal').classList.remove('open');$('projectsModal').setAttribute('aria-hidden','true');$('projectsBtn').focus();}
 
+function applyCircuitPreset(name){
+  const preset=PRESETS[name];if(!preset)return;
+  for(const [id,value] of Object.entries(preset)){if(id==='system')continue;$(id).value=value;}
+  document.querySelector(`input[name="system"][value="${preset.system}"]`).checked=true;
+  $('section').value='auto';$('breaker').value='auto';display();toast('Modelo aplicado. Revise instalação, comprimento e demais condições.');
+}
+
+function setCollapsed(button,collapsed){
+  const target=$(button.dataset.collapseTarget);if(!target)return;target.classList.toggle('collapsed',collapsed);button.setAttribute('aria-expanded',String(!collapsed));button.textContent=collapsed?'Expandir':'Recolher';
+}
+function setupCollapsibles(){
+  document.querySelectorAll('[data-collapse-target]').forEach(button=>{button.addEventListener('click',()=>setCollapsed(button,button.getAttribute('aria-expanded')==='true'));if(matchMedia('(max-width: 890px)').matches&&button.dataset.mobileCollapsed==='true'){const shouldCollapse=button.dataset.collapseTarget!=='segmentsSection'||segments.length===0;setCollapsed(button,shouldCollapse);}});
+}
+function expandSection(id){const button=document.querySelector(`[data-collapse-target="${id}"]`);if(button)setCollapsed(button,false);}
+
+function closeMobileMore(){$('mobileMorePanel').classList.remove('open');$('mobileMorePanel').setAttribute('aria-hidden','true');$('mobileMoreBtn').setAttribute('aria-expanded','false');}
+function toggleMobileMore(){const open=!$('mobileMorePanel').classList.contains('open');$('mobileMorePanel').classList.toggle('open',open);$('mobileMorePanel').setAttribute('aria-hidden',String(!open));$('mobileMoreBtn').setAttribute('aria-expanded',String(open));}
+function toggleLargeText(){const active=!document.body.classList.contains('text-large');document.body.classList.toggle('text-large',active);$('mobileTextBtn').textContent=active?'Texto normal':'Texto maior';try{localStorage.setItem('calc_eletrica_large_text',active?'1':'0');}catch(e){}closeMobileMore();}
+
 $('material').addEventListener('change',()=>{optionSize();display();});$('method').addEventListener('change',()=>{optionArrangement();display();});$('arrangement').addEventListener('change',()=>{optionArrangement();display();});
+$('circuitPreset').addEventListener('change',event=>applyCircuitPreset(event.target.value));
 document.querySelectorAll('#form input:not([name="system"]),#form select').forEach(el=>{if(['material','method','arrangement'].includes(el.id))return;el.addEventListener('input',display);el.addEventListener('change',display);});
 document.querySelectorAll('input[name="system"]').forEach(el=>el.addEventListener('change',()=>{if(el.checked){const voltage=Number($('voltage').value);if(el.value==='three'&&voltage===220)$('voltage').value='380';if(el.value==='two'&&voltage===380)$('voltage').value='220';display();}}));
 $('segments').addEventListener('input',event=>{const field=event.target.dataset.segmentField;if(!field)return;const row=event.target.closest('[data-segment]'),index=Number(row.dataset.segment);segments[index][field]=event.target.value;if(field==='name')row.querySelector('.segment-head strong').textContent=event.target.value||`Trecho ${index+1}`;display();});
 $('segments').addEventListener('change',event=>{const field=event.target.dataset.segmentField;if(!field)return;const index=Number(event.target.closest('[data-segment]').dataset.segment),segment=segments[index];segment[field]=event.target.value;if(field==='material'&&!sizesFor(segment.material).includes(Number(segment.section)))segment.section=segment.material==='al'?'16':'6';if(field==='method'&&segment.method!=='C')segment.arrangement='bundle';if(field==='arrangement'&&segment.arrangement==='wall'&&Number(segment.group)>9)segment.group='9';segments[index]=normalizeSegment(segment,index);renderSegments();display();});
 $('segments').addEventListener('click',event=>{const button=event.target.closest('[data-remove-segment]');if(!button)return;segments.splice(Number(button.dataset.removeSegment),1);renderSegments();display();});
-$('addSegmentBtn').addEventListener('click',()=>{segments.push(normalizeSegment({name:`Alimentador ${segments.length+1}`,length:'10',material:$('material').value,insulation:$('insulation').value,section:$('section').value,method:$('method').value,ambient:$('ambient').value,group:$('group').value,arrangement:$('arrangement').value},segments.length));renderSegments();display();});
+$('addSegmentBtn').addEventListener('click',()=>{segments.push(normalizeSegment({name:`Alimentador ${segments.length+1}`,length:'10',material:$('material').value,insulation:$('insulation').value,section:$('section').value,method:$('method').value,ambient:$('ambient').value,group:$('group').value,arrangement:$('arrangement').value},segments.length));expandSection('segmentsSection');renderSegments();display();});
 $('applyRecommendation').addEventListener('click',()=>{if(!currentData?.recommendedSection)return;$('section').value=String(currentData.recommendedSection);display();toast('Seção recomendada aplicada.');});
 $('resetBtn').addEventListener('click',reset);$('saveBtn').addEventListener('click',saveProject);$('projectsBtn').addEventListener('click',openProjects);$('closeProjects').addEventListener('click',closeProjects);$('saveFromModal').addEventListener('click',()=>{saveProject();renderSavedProjects();});$('projectsModal').addEventListener('click',event=>{if(event.target===$('projectsModal'))closeProjects();});
 $('printBtn').addEventListener('click',printDoc);$('printBtn2').addEventListener('click',printDoc);$('copyBtn').addEventListener('click',copyMemory);$('memoryBtn').addEventListener('click',openMemory);$('closeModal').addEventListener('click',closeMemory);$('modalCopy').addEventListener('click',copyMemory);$('modalPrint').addEventListener('click',printDoc);$('modalBg').addEventListener('click',event=>{if(event.target===$('modalBg'))closeMemory();});document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if($('modalBg').classList.contains('open'))closeMemory();if($('projectsModal').classList.contains('open'))closeProjects();});
+$('mobileSaveBtn').addEventListener('click',saveProject);$('mobileResultsBtn').addEventListener('click',()=>$('resultsPanel').scrollIntoView({behavior:'smooth',block:'start'}));$('mobileMoreBtn').addEventListener('click',toggleMobileMore);$('mobileTextBtn').addEventListener('click',toggleLargeText);$('mobileMorePanel').addEventListener('click',event=>{const button=event.target.closest('[data-forward]');if(!button)return;closeMobileMore();$(button.dataset.forward)?.click();});document.addEventListener('click',event=>{if(!$('mobileMorePanel').contains(event.target)&&!$('mobileMoreBtn').contains(event.target))closeMobileMore();});
 
 let persisted=null;try{persisted=JSON.parse(localStorage.getItem('calc_eletrica_offline_v12')||'null');}catch(e){}
 if(persisted?.values){segments=(persisted.segments||[]).map(normalizeSegment);applyValues(persisted.values);}else{let prior=null;try{prior=JSON.parse(localStorage.getItem('calc_eletrica_offline_v11')||'null');}catch(e){}if(prior?.values){segments=(prior.segments||[]).map(normalizeSegment);applyValues({...prior.values,section:'auto',breaker:'auto'});}else{let legacy=null;try{legacy=JSON.parse(localStorage.getItem('calc_eletrica_offline_v1')||'null');}catch(e){}applyValues({...defaultValues,...(legacy&&typeof legacy==='object'?legacy:{}),section:'auto',breaker:'auto'});}}
-renderSegments();display();
+try{if(localStorage.getItem('calc_eletrica_large_text')==='1'){document.body.classList.add('text-large');$('mobileTextBtn').textContent='Texto normal';}}catch(e){}
+renderSegments();setupCollapsibles();display();
 
 // Mantém a escala estável em iPhone/iPad: bloqueia gestos de pinça que escapem
 // das regras de viewport e evita o zoom por duplo toque nos controles.

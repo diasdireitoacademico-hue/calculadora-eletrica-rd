@@ -1,6 +1,6 @@
-/* Calculadora Elétrica RD | offline shell | v1.2.1 */
+/* Calculadora Elétrica RD | offline shell | v1.3.0 */
 'use strict';
-const CACHE = 'calculadora-rd-shell-v1.2.1';
+const CACHE = 'calculadora-rd-shell-v1.3.0';
 const ASSETS = [
   './index.html',
   './app.js',
