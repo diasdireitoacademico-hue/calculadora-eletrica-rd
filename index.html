@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Calculadora elétrica RD: corrente da carga, capacidade corrigida dos condutores e queda de tensão. Funciona offline após instalação.">
+<meta name="application-name" content="Calculadora Elétrica RD">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Elétrica RD">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png">
+<meta name="theme-color" content="#102b48">
+<title>Calculadora Elétrica RD | Corrente, Ampacidade e Queda de Tensão</title>
+<style>
+:root{--navy:#102b48;--navy2:#183c60;--blue:#1760a0;--bg:#f1f5f9;--line:#dce5ee;--muted:#5c7187;--text:#183046;--white:#fff;--ok:#0e7b58;--bad:#bc3f37;--warn:#94630d;--shadow:0 10px 35px rgba(25,52,80,.08)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}button,input,select{font:inherit}button{cursor:pointer}a{color:#125a9b}.header{background:linear-gradient(115deg,#102b48,#224a6a);color:white;padding:27px max(20px,calc((100vw - 1210px)/2)) 25px}.header .eyebrow{font-size:11px;letter-spacing:2.2px;font-weight:800;text-transform:uppercase;color:#a5cee9}.header h1{font-size:clamp(23px,3.2vw,34px);line-height:1.18;margin:8px 0}.header p{color:#d9e7f2;margin:0;max-width:820px}.shell{max-width:1250px;margin:auto;padding:24px 20px 60px}.topline{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:17px;flex-wrap:wrap}.topline .pill{font-size:12px;background:#e7f0f8;border:1px solid #cbdff0;border-radius:20px;padding:6px 12px;color:#24577b;font-weight:750}.layout{display:grid;grid-template-columns:minmax(330px,.93fr) minmax(410px,1.07fr);gap:20px;align-items:start}.card{background:white;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}.cardhead{display:flex;align-items:center;gap:10px;padding:18px 20px 14px;border-bottom:1px solid #e5edf3}.step{background:#e7f0f8;color:#1760a0;display:grid;place-items:center;border-radius:9px;width:30px;height:30px;font-weight:850;font-size:13px;flex-shrink:0}.cardhead h2{margin:0;font-size:17px;letter-spacing:-.3px}.section{padding:18px 20px 20px}.section+.cardhead{border-top:1px solid var(--line)}.smallcap{font-size:11px;color:#587087;letter-spacing:1.3px;font-weight:800;text-transform:uppercase;margin:0 0 10px}.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.field{min-width:0}.field.wide{grid-column:1/-1}label{display:block;color:#334e65;font-size:12.5px;font-weight:750;margin-bottom:6px}.hint{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.45}select,input[type="number"],input[type="text"]{width:100%;height:43px;border-radius:9px;border:1px solid #cad7e4;background:#fff;padding:0 10px;color:#17344e;outline:none;transition:box-shadow .15s,border-color .15s}select:focus,input:focus{border-color:#367abb;box-shadow:0 0 0 3px #c5e2ff88}input[aria-invalid="true"]{border-color:#c74444;background:#fff9f8}.seg{display:grid;grid-template-columns:1fr 1fr;gap:7px}.seg label{position:relative;display:flex;align-items:center;justify-content:center;text-align:center;gap:7px;margin:0;cursor:pointer;padding:10px 7px;border:1px solid #cbd9e6;border-radius:9px;font-size:12px;background:white}.seg label:has(input:checked){background:#e6f1fc;border-color:#377eb9;color:#0a548e}.seg input{accent-color:var(--blue)}.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border-radius:9px;padding:10px 14px;border:1px solid #bbcbd9;background:white;color:#20445e;font-weight:750;font-size:13px;transition:background .15s}.btn:hover{background:#eef5fc}.btn.primary{border-color:#155885;background:#155885;color:white}.btn.primary:hover{background:#0b436e}.btn:disabled{opacity:.5;cursor:not-allowed}.resultpanel{padding:21px}.resultpanel h2{margin:0 0 2px;font-size:19px}.resultpanel>.sub{color:var(--muted);font-size:12px;margin-bottom:19px}.results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metric{background:#f5f8fb;border:1px solid #e2ebf1;border-radius:12px;padding:13px 15px;min-height:112px}.metric .name{font-size:12px;color:#567084;font-weight:700;min-height:33px}.metric .value{font-size:clamp(20px,2.8vw,30px);font-weight:850;letter-spacing:-.9px;white-space:nowrap;font-variant-numeric:tabular-nums}.metric .foot{font-size:11px;color:#61768a}.statusblock{margin-top:16px;padding:14px 15px;border:1px solid #e1e9f1;border-radius:12px}.statusheading{display:flex;align-items:center;justify-content:space-between;gap:9px;font-weight:750;font-size:13px;margin-bottom:8px}.statusheading .value{font-variant-numeric:tabular-nums}.track{height:10px;border-radius:10px;background:#e5ecf2;overflow:hidden}.fill{height:100%;width:0;background:var(--ok);border-radius:10px;transition:width .2s}.fill.bad{background:var(--bad)}.state{font-size:12px;display:flex;align-items:flex-start;gap:7px;margin-top:8px;font-weight:700}.state.good{color:var(--ok)}.state.bad{color:var(--bad)}.state.neutral{color:var(--muted)}.dot{display:inline-block;flex-shrink:0;height:8px;width:8px;margin-top:5px;border-radius:100%;background:currentColor}.summary{margin-top:16px;border-radius:12px;border:1px solid #c4e2d8;background:#f0faf6;padding:13px 15px;color:#125c46;font-size:13px}.summary.bad{border-color:#edccc9;background:#fff5f4;color:#89352e}.summary strong{display:block;font-size:14px;margin-bottom:3px}.alert{margin:16px 0 0;padding:12px 15px;border-radius:9px;border:1px solid #efd9b9;background:#fff8eb;color:#795319;font-size:12.5px}.error{display:none;margin-bottom:15px;background:#fff3f1;border:1px solid #f2c9c5;border-radius:10px;padding:10px 13px;color:#9e302d;font-weight:700;font-size:12px}.error.show{display:block}.meta{margin-top:20px}.meta h3{margin:0 0 9px;font-size:15px}table{width:100%;border-collapse:collapse;font-size:12.5px}th,td{border-bottom:1px solid #e6edf3;padding:8px 5px;text-align:left}th{color:#516b80;font-size:11px;text-transform:uppercase;letter-spacing:.6px}td:last-child,th:last-child{text-align:right;font-variant-numeric:tabular-nums;font-weight:750}tr:last-child td{border-bottom:0}.formula{background:#f6f8fa;border-radius:9px;padding:10px 12px;color:#405f77;font-size:12px;margin-top:11px;overflow-wrap:anywhere}.note-card{margin-top:20px;padding:19px 21px;background:white;border:1px solid var(--line);border-radius:15px}.note-card h3{margin:0 0 9px;font-size:16px}.note-card p,.note-card li{font-size:12.5px;color:#53697c}.note-card ul{margin:9px 0 0;padding-left:18px}.note-card li{margin-bottom:5px}.footer{color:#6b8192;text-align:center;font-size:11px;margin-top:23px}.print-report{display:none}.modalbg{position:fixed;inset:0;background:#102b48a8;display:none;z-index:10;padding:16px;place-items:center}.modalbg.open{display:grid}.modal{width:min(760px,100%);max-height:88vh;display:flex;flex-direction:column;background:white;border-radius:16px;box-shadow:0 24px 100px #09152255}.modalhead{padding:18px 20px;border-bottom:1px solid #dde7ed;display:flex;align-items:center;justify-content:space-between;gap:10px}.modalhead h2{font-size:18px;margin:0}.modal pre{margin:0;padding:20px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65;font-size:12.5px;flex:1}.modalfoot{border-top:1px solid #dde7ed;padding:14px 20px;display:flex;gap:9px;justify-content:flex-end}.toast{position:fixed;bottom:22px;right:20px;background:#1c674d;color:white;padding:11px 16px;border-radius:10px;box-shadow:var(--shadow);display:none;z-index:20}.toast.show{display:block}.hide{display:none!important}
+@media(max-width:890px){.layout{grid-template-columns:1fr}.header{padding:24px 20px}.resultpanel{padding:20px}.shell{padding:19px 13px 42px}.section{padding:16px}.cardhead{padding:15px 16px}.metric .value{font-size:27px}}
+@media(max-width:440px){.fields{gap:11px}.metric{padding:12px 10px}.metric .value{font-size:23px}.metric .name{font-size:11px}.shell{padding-inline:9px}.seg{grid-template-columns:1fr}.actions .btn{flex:1}}
+@media print{*{box-shadow:none!important}body{background:white;color:black;font-size:11pt}.header,.shell,.modalbg,.toast{display:none!important}.print-report{display:block;padding:0;margin:0}.print-report h1{font-size:20pt;margin:0}.print-report h2{font-size:13pt;margin:24px 0 10px}.print-report .print-muted{font-size:9pt;color:#555}.print-report table{font-size:10pt;border:1px solid #ccc}.print-report td{padding:7px 10px;border-bottom:1px solid #ddd}.print-report td:last-child{text-align:left}.print-report .disclaimer{font-size:9pt;line-height:1.5;margin-top:25px;border-top:1px solid #888;padding-top:10px}.print-report .stamp{margin-top:40px;border-top:1px solid #999;padding-top:8px;font-size:9pt} @page{size:A4;margin:16mm}}
+
+/* PWA extras: installation, network and iOS safe areas */
+.shell{padding-bottom:calc(60px + env(safe-area-inset-bottom, 0px))}
+.installbox{max-width:620px}.installcontent{padding:18px 20px 8px;overflow-y:auto}.installstatus{border-radius:9px;background:#ecf5fe;border:1px solid #c5dbee;color:#174f7a;padding:10px 12px;font-size:12.5px;font-weight:750;margin-bottom:14px}.installsteps{padding:10px 0;border-bottom:1px solid var(--line)}.installsteps strong{font-size:13px}.installsteps p{font-size:12.5px;color:var(--muted);line-height:1.55;margin:5px 0 0}.installfine{font-size:11px;color:var(--muted);line-height:1.55}.installmodal .modalfoot{flex-wrap:wrap}.btn:focus-visible{outline:3px solid #93cbf6;outline-offset:2px}
+@media(max-width:440px){.installbox{max-height:94vh}.installcontent{padding:12px 15px}.installmodal .modalfoot{padding:11px 15px}}
+@media print{.installmodal{display:none!important}}
+</style>
+</head>
+<body>
+<header class="header"><div class="eyebrow">RD • Ferramenta técnica • PWA 1.0</div><h1>Calculadora elétrica RD</h1><p>Corrente da carga, capacidade de condução de corrente e queda de tensão. Simulações preliminares para circuitos em baixa tensão.</p></header>
+<main class="shell">
+<div class="topline"><span class="pill">✓ Cálculos no dispositivo • Disponível offline após primeira abertura</span><div class="actions"><button class="btn" type="button" id="installBtn" aria-label="Instruções para instalar o aplicativo">＋ Instalar aplicativo</button><button class="btn" type="button" id="resetBtn">↺ Restaurar</button><button class="btn" type="button" id="memoryBtn">Ver memória</button><button class="btn primary" type="button" id="printBtn">Imprimir / Salvar PDF</button></div></div>
+<div class="layout">
+<form class="card" id="form" onsubmit="return false;" novalidate>
+<div class="cardhead"><span class="step">01</span><h2>Dados elétricos</h2></div>
+<div class="section">
+<div class="field" style="margin-bottom:16px"><label>Configuração do circuito</label><div class="seg"><label><input type="radio" name="system" value="two" checked> Dois condutores (F+N / F+F)</label><label><input type="radio" name="system" value="three"> Trifásico equilibrado</label></div></div>
+<div class="fields">
+<div class="field"><label for="power">Potência ativa (W)</label><input id="power" type="number" min="0.01" max="1e9" step="any" value="5500"></div>
+<div class="field"><label for="voltage">Tensão nominal (V)</label><input id="voltage" type="number" min="0.01" max="1000" step="any" value="220"></div>
+<div class="field"><label for="pf">Fator de potência (cos φ)</label><input id="pf" type="number" min="0.01" max="1" step="any" value="0.92"></div>
+<div class="field"><label for="length">Comprimento de ida (m)</label><input id="length" type="number" min="0" max="100000" step="any" value="30"><div class="hint">Informe apenas a distância física de ida.</div></div>
+</div></div>
+<div class="cardhead"><span class="step">02</span><h2>Condutor e instalação</h2></div>
+<div class="section"><div class="fields">
+<div class="field"><label for="material">Material</label><select id="material"><option value="cu">Cobre</option><option value="al">Alumínio</option></select></div>
+<div class="field"><label for="insulation">Isolação</label><select id="insulation"><option value="pvc">PVC — 70 °C</option><option value="xlpe">EPR / XLPE — 90 °C</option></select></div>
+<div class="field"><label for="section">Seção nominal (mm²)</label><select id="section"></select></div>
+<div class="field"><label for="method">Método de referência</label><select id="method"><option value="B1">B1 — Condutores em eletroduto</option><option value="B2">B2 — Cabo multipolar em eletroduto</option><option value="C">C — Cabos fixados diretamente</option></select></div>
+<div class="field"><label for="ambient">Temperatura ambiente (°C)</label><select id="ambient"><option value="20">20 °C</option><option value="25">25 °C</option><option value="30" selected>30 °C</option><option value="35">35 °C</option><option value="40">40 °C</option><option value="45">45 °C</option><option value="50">50 °C</option><option value="55">55 °C</option><option value="60">60 °C</option></select></div>
+<div class="field"><label for="group">Circuitos agrupados</label><select id="group"><option value="1">1 circuito</option><option value="2">2 circuitos</option><option value="3">3 circuitos</option><option value="4">4 circuitos</option><option value="5">5 circuitos</option><option value="6">6 circuitos</option><option value="7">7 circuitos</option><option value="8">8 circuitos</option><option value="9">9 a 11 circuitos</option><option value="12">12 a 15 circuitos</option><option value="16">16 a 19 circuitos</option><option value="20">20 ou mais circuitos</option></select></div>
+<div class="field wide"><label for="arrangement">Disposição dos circuitos agrupados</label><select id="arrangement"><option value="bundle">Feixe / conduto fechado</option><option value="wall">Camada única na parede / piso / bandeja não perfurada (método C)</option></select><div class="hint" id="arrHelp">Para eletrodutos, use feixe / conduto fechado. Para método C, também é possível selecionar disposição em camada única.</div></div>
+<div class="field wide"><label for="limit">Limite de queda de tensão utilizado na comparação</label><select id="limit"><option value="3">3%</option><option value="4" selected>4% — referência usual para circuitos terminais</option><option value="5">5%</option><option value="7">7%</option></select><div class="hint">Limite configurável para simulação. A conformidade real depende da origem da instalação e da queda acumulada.</div></div>
+</div></div>
+</form>
+<section class="card" aria-label="Resultados elétricos"><div class="resultpanel"><h2>Resultados instantâneos</h2><div class="sub">Atualizados automaticamente ao alterar os parâmetros</div><div id="errors" class="error" role="alert"></div>
+<div class="results"><div class="metric"><div class="name">Corrente da carga • Ib</div><div class="value" id="ib">—</div><div class="foot">Corrente calculada de projeto</div></div><div class="metric"><div class="name">Capacidade corrigida • Iz</div><div class="value" id="iz">—</div><div class="foot">Tabelada × fatores</div></div><div class="metric"><div class="name">Queda de tensão • ΔU</div><div class="value" id="dropPct">—</div><div class="foot" id="dropVolt">— V</div></div><div class="metric"><div class="name">Tensão estimada na carga</div><div class="value" id="loadVoltage">—</div><div class="foot">Aproximação em regime permanente</div></div></div>
+<div class="statusblock"><div class="statusheading"><span>Utilização da capacidade do condutor</span><span class="value" id="ampRatio">—</span></div><div class="track"><div id="ampBar" class="fill"></div></div><div class="state neutral" id="ampState"><span class="dot"></span><span>Aguardando dados</span></div></div>
+<div class="statusblock"><div class="statusheading"><span>Queda de tensão em relação ao limite</span><span class="value" id="dropRatio">—</span></div><div class="track"><div id="dropBar" class="fill"></div></div><div class="state neutral" id="dropState"><span class="dot"></span><span>Aguardando dados</span></div></div>
+<div class="summary" id="summary"><strong>Análise preliminar</strong><span>Preencha os dados para avaliar o circuito.</span></div>
+<div class="meta"><h3>Memória de cálculo resumida</h3><table><tbody><tr><td>Capacidade base tabelada • Iz₀</td><td id="iz0Cell">—</td></tr><tr><td>Fator de temperatura • Ft</td><td id="ftCell">—</td></tr><tr><td>Fator de agrupamento • Fg</td><td id="fgCell">—</td></tr><tr><td>Resistência na temperatura de cálculo • R</td><td id="resCell">—</td></tr><tr><td>Reatância estimada • X</td><td>0,080 Ω/km</td></tr><tr><td>Margem de ampacidade (Iz − Ib)</td><td id="marginCell">—</td></tr></tbody></table>
+<div class="formula">Ib = P / (k · U · cos φ), com k = 1 ou √3.<br>Iz = Iz₀ · Ft · Fg.<br>ΔU ≈ q · Ib · L · (R · cos φ + X · sen φ), com q = 2 ou √3, L em km.</div></div>
+<div class="actions" style="margin-top:17px"><button class="btn primary" type="button" id="copyBtn">Copiar memória de cálculo</button><button class="btn" type="button" id="printBtn2">Imprimir / Salvar PDF</button></div>
+<div class="alert"><b>Atenção:</b> o resultado avalia apenas ampacidade e queda de tensão aproximadas, com métodos B1, B2 ou C. Não substitui a seleção do dispositivo de proteção, verificação de curto-circuito, seções mínimas, harmônicas, critérios do neutro ou demais exigências da NBR 5410.</div>
+</div></section></div>
+<section class="note-card"><h3>Critérios de utilização e limitações</h3><ul><li><b>Capacidade de condução:</b> valores de referência para métodos B1, B2 e C, isolamento PVC 70 °C ou EPR/XLPE 90 °C, 2 ou 3 condutores carregados, conforme tabelas 36 e 37 da ABNT NBR 5410:2004. A referência para ar é 30 °C.</li><li><b>Correções:</b> temperatura ambiente conforme tabela 40 e agrupamento em feixe ou camada única sobre parede/piso/bandeja não perfurada conforme tabela 42. Não considera enterramento, resistividade térmica do solo, multicamadas ou fator de correção por harmônicas.</li><li><b>Queda de tensão:</b> estimativa considerando resistividade de referência do metal, temperatura máxima nominal do condutor e reatância fixa aproximada de 0,08 Ω/km. Para projetos críticos, verificar a impedância real dos cabos, formação, trajeto e dados do fabricante.</li><li><b>Potência:</b> informe potência elétrica ativa absorvida (W), não potência térmica de ar-condicionado, potência mecânica de motor nem potência aparente em VA. Para motores e partidas, use análise específica.</li><li><b>Aplicabilidade:</b> não abrange os métodos E/F de eletrocalhas perfuradas e leitos, nem os efeitos de desequilíbrio e de neutro sobrecarregado. A seção nominal recomendável também depende da seção mínima regulamentar e da coordenação com a proteção: Ib ≤ In ≤ Iz e condição convencional de atuação.</li><li><b>Referências técnicas:</b> ABNT NBR 5410:2004, tabelas 33, 36, 37, 40 e 42; <a href="https://appeng.com.br/app-eng/principal/eletrica/tabelas5410.jsp" target="_blank" rel="noopener noreferrer">consulta pública de tabelas (opcional)</a>. A calculadora funciona sem acessar esses links.</li></ul></section>
+<div class="footer">Calculadora elétrica RD • PWA 1.0 • Cálculos processados localmente • <span id="connectionStatus" aria-live="polite">Verificando conectividade…</span></div>
+</main>
+<div class="installmodal modalbg" id="installModal" role="dialog" aria-modal="true" aria-labelledby="installTitle" aria-hidden="true">
+ <div class="modal installbox">
+  <div class="modalhead"><h2 id="installTitle">Instalar Calculadora Elétrica RD</h2><button type="button" class="btn" id="closeInstall">Fechar ×</button></div>
+  <div class="installcontent">
+   <div class="installstatus" id="installStatus">O aplicativo precisa estar publicado em HTTPS para instalação.</div>
+   <div class="installsteps"><strong>iPhone / iPad (Safari)</strong><p>Abra o endereço HTTPS no Safari → Compartilhar → Adicionar à Tela de Início → habilite “Abrir como App da Web”, se disponível → Adicionar.</p></div>
+   <div class="installsteps"><strong>Android / Galaxy Tab</strong><p>Abra o endereço HTTPS no Chrome ou Samsung Internet → menu ⋮ → Instalar aplicativo ou Adicionar à Tela inicial.</p></div>
+   <div class="installsteps"><strong>Windows (Edge / Chrome)</strong><p>Abra o endereço HTTPS → menu do navegador → Aplicativos → Instalar este site como aplicativo (a opção pode variar).</p></div>
+   <p class="installfine">Abra o aplicativo instalado pelo menos uma vez com internet; depois, os recursos necessários poderão funcionar sem conexão. A instalação no iPhone depende de um endereço HTTPS, não de abrir o arquivo ZIP ou HTML diretamente.</p>
+  </div>
+  <div class="modalfoot"><button type="button" class="btn primary" id="installNow" hidden>Instalar neste dispositivo</button><button type="button" class="btn" id="installDone">Entendi</button></div>
+ </div>
+</div>
+<div class="modalbg" id="modalBg" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal"><div class="modalhead"><h2 id="modalTitle">Memória de cálculo completa</h2><button type="button" class="btn" id="closeModal">Fechar ×</button></div><pre id="memoryText"></pre><div class="modalfoot"><button class="btn" type="button" id="modalCopy">Copiar texto</button><button class="btn primary" type="button" id="modalPrint">Imprimir / Salvar PDF</button></div></div></div>
+<div class="toast" id="toast" role="status">Memória copiada.</div>
+<div class="print-report" id="printReport"><h1>MEMÓRIA DE CÁLCULO ELÉTRICO</h1><div class="print-muted">Corrente, ampacidade e queda de tensão — relatório preliminar</div><div id="printDetails"></div><div class="disclaimer"><b>Nota técnica:</b> os resultados são aproximações, baseadas nos parâmetros registrados. Não representam dimensionamento integral nem verificação de conformidade da instalação. Verificar as condições reais, dispositivos de proteção, curto-circuito, seções mínimas, agrupamento, trajeto completo e demais exigências aplicáveis. Referências: ABNT NBR 5410:2004, tabelas 33, 36, 37, 40 e 42.</div><div class="stamp">Data de emissão: <span id="printDate"></span> • Arquivo gerado offline</div></div>
+<script>
+'use strict';
+// Dados extraídos das tabelas 36 e 37 da ABNT NBR 5410:2004.
+// Em cada linha: [B1/2, B1/3, B2/2, B2/3, C/2, C/3] em A.
+const SECTIONS=[1.5,2.5,4,6,10,16,25,35,50,70,95,120,150,185,240];
+const CAPACITY={
+cu_pvc:[[17.5,15.5,16.5,15,19.5,17.5],[24,21,23,20,27,24],[32,28,30,27,36,32],[41,36,38,34,46,41],[57,50,52,46,63,57],[76,68,69,62,85,76],[101,89,90,80,112,96],[125,110,111,99,138,119],[151,134,133,118,168,144],[192,171,168,149,213,184],[232,207,201,179,258,223],[269,239,232,206,299,259],[309,275,265,236,344,299],[353,314,300,268,392,341],[415,370,351,313,461,403]],
+cu_xlpe:[[23,20,22,19.5,24,22],[31,28,30,26,33,30],[42,37,40,35,45,40],[54,48,51,44,58,52],[75,66,69,60,80,71],[100,88,91,80,107,96],[133,117,119,105,138,119],[164,144,146,128,171,147],[198,175,175,154,209,179],[253,222,221,194,269,229],[306,269,265,233,328,278],[354,312,305,268,382,322],[407,358,349,307,441,371],[464,408,395,348,506,424],[546,481,462,407,599,500]],
+al_pvc:[null,null,null,null,null,[60,53,54,48,66,59],[79,70,71,62,83,73],[97,86,86,77,103,90],[118,104,104,92,125,110],[150,133,131,116,160,140],[181,161,157,139,195,170],[210,186,181,160,226,197],[241,214,206,183,261,227],[275,245,234,208,298,259],[324,288,274,243,352,305]],
+al_xlpe:[null,null,null,null,null,[79,71,72,64,84,76],[105,93,94,84,101,90],[130,116,115,103,126,112],[157,140,138,124,154,136],[200,179,175,156,198,174],[242,217,210,188,241,211],[281,251,242,216,280,245],[323,289,277,248,324,283],[368,330,314,281,371,323],[433,389,368,329,439,382]]
+};
+const TEMP={pvc:{20:1.12,25:1.06,30:1,35:.94,40:.87,45:.79,50:.71,55:.61,60:.50},xlpe:{20:1.08,25:1.04,30:1,35:.96,40:.91,45:.87,50:.82,55:.76,60:.71}};
+const GROUP={bundle:{1:1,2:.8,3:.70,4:.65,5:.60,6:.57,7:.54,8:.52,9:.50,12:.45,16:.41,20:.38},wall:{1:1,2:.85,3:.79,4:.75,5:.73,6:.72,7:.72,8:.71,9:.70}};
+const $=id=>document.getElementById(id);
+const fieldIds=['power','voltage','pf','length','material','insulation','section','method','ambient','group','arrangement','limit'];
+const defaultValues={power:'5500',voltage:'220',pf:'0.92',length:'30',material:'cu',insulation:'pvc',section:'6',method:'B1',ambient:'30',group:'1',arrangement:'bundle',limit:'4',system:'two'};
+let currentData=null, memory='';
+const fr=(v,n=2)=>Number.isFinite(v)?v.toLocaleString('pt-BR',{minimumFractionDigits:n,maximumFractionDigits:n}):'—';
+function optionSize(){const m=$('material').value,previous=$('section').value||defaultValues.section;const ss=SECTIONS.filter(n=>m==='cu'||n>=16);$('section').innerHTML=ss.map(n=>`<option value="${n}">${String(n).replace('.',',')} mm²</option>`).join('');$('section').value=ss.some(n=>String(n)===previous)?previous:(m==='al'?'16':'6')}
+function optionArrangement(){const method=$('method').value,arr=$('arrangement');const wall=arr.querySelector('option[value="wall"]');wall.disabled=method!=='C';if(wall.disabled&&arr.value==='wall')arr.value='bundle';const prior=$('group').value;Array.from($('group').options).forEach(o=>o.disabled=arr.value==='wall'&&Number(o.value)>9);if(arr.value==='wall'&&Number(prior)>9)$('group').value='9';$('arrHelp').textContent=arr.value==='wall'?'Fator válido apenas para camada única conforme tab. 42, ref. 2. Não aplica a bandeja perfurada ou leito.':'Feixe/conduto fechado (tab. 42, ref. 1). Para método C, selecione camada única quando aplicável.'}
+function collect(){const v=Object.fromEntries(fieldIds.map(id=>[id,$(id).value]));v.system=document.querySelector('input[name="system"]:checked').value;const p=Number(v.power),u=Number(v.voltage),fp=Number(v.pf),len=Number(v.length),s=Number(v.section);const errors=[];if(!Number.isFinite(p)||p<=0)errors.push('Informe uma potência positiva.');if(!Number.isFinite(u)||u<=0||u>1000)errors.push('A tensão deve estar acima de 0 V e até 1.000 V.');if(!Number.isFinite(fp)||fp<=0||fp>1)errors.push('O fator de potência deve ser maior que 0 e no máximo 1.');if(!Number.isFinite(len)||len<0)errors.push('O comprimento não pode ser negativo.');if(!(s>0))errors.push('Selecione uma seção válida.');if(v.arrangement==='wall'&&v.method!=='C')errors.push('Camada única é válida nesta calculadora apenas para método C.');
+if(errors.length)return {errors};
+const cols=({B1:0,B2:2,C:4}[v.method])+(v.system==='three'?1:0);
+const iz0=CAPACITY[v.material+'_'+v.insulation]?.[SECTIONS.indexOf(s)]?.[cols];
+const ft=TEMP[v.insulation][v.ambient],fg=GROUP[v.arrangement][v.group];
+if(!Number.isFinite(iz0)||!Number.isFinite(ft)||!Number.isFinite(fg))return {errors:['A combinação selecionada não possui valor tabelado válido.']};
+const iz=iz0*ft*fg,k=v.system==='three'?Math.sqrt(3):1,q=v.system==='three'?Math.sqrt(3):2;
+const ib=p/(k*u*fp);
+const rho=v.material==='cu'?.01724:.02826,alpha=v.material==='cu'?.00393:.00403,temperature=v.insulation==='pvc'?70:90;
+const rKm=1000*rho*(1+alpha*(temperature-20))/s,xKm=.08;
+const sinPhi=Math.sqrt(Math.max(0,1-fp*fp));
+const delta=q*ib*(rKm*fp+xKm*sinPhi)*len/1000,dropPercent=100*delta/u;
+return {v,p,u,fp,len,s,ib,iz0,iz,ft,fg,rKm,xKm,delta,dropPercent,temperature,loadVoltage:u-delta,ratio:100*ib/iz,ampOK:ib<=iz,dropOK:dropPercent<=Number(v.limit),errors:[]};
+}
+function status(stateId,valid,text){const el=$(stateId);el.className='state '+(valid?'good':'bad');el.innerHTML='<span class="dot"></span><span></span>';el.lastChild.textContent=text}
+function bar(barId,ratio,good){const el=$(barId);el.style.width=Math.max(0,Math.min(100,ratio))+'%';el.className='fill'+(good?'':' bad')}
+function display(){currentData=collect();const d=currentData;if(d.errors.length){$('errors').textContent=d.errors.join(' ');$('errors').classList.add('show');['ib','iz','dropPct','dropVolt','loadVoltage','ampRatio','dropRatio','iz0Cell','ftCell','fgCell','resCell','marginCell'].forEach(id=>$(id).textContent='—');['ampBar','dropBar'].forEach(id=>$(id).style.width='0');$('ampState').className=$('dropState').className='state neutral';$('ampState').textContent=$('dropState').textContent='Parâmetros inválidos';$('summary').className='summary bad';$('summary').innerHTML='<strong>Não foi possível calcular</strong><span>Corrija os parâmetros indicados.</span>';memory='';$('copyBtn').disabled=$('printBtn').disabled=$('printBtn2').disabled=$('memoryBtn').disabled=true;return}
+$('errors').classList.remove('show');$('copyBtn').disabled=$('printBtn').disabled=$('printBtn2').disabled=$('memoryBtn').disabled=false;
+$('ib').textContent=fr(d.ib)+' A';$('iz').textContent=fr(d.iz)+' A';$('dropPct').textContent=fr(d.dropPercent)+'%';$('dropVolt').textContent=fr(d.delta)+' V';$('loadVoltage').textContent=fr(d.loadVoltage)+' V';
+$('ampRatio').textContent=fr(d.ratio,1)+'%';$('dropRatio').textContent=fr(d.dropPercent)+'% / '+d.v.limit+'%';bar('ampBar',d.ratio,d.ampOK);bar('dropBar',d.dropPercent/Number(d.v.limit)*100,d.dropOK);
+status('ampState',d.ampOK,d.ampOK?'Ampacidade suficiente para a corrente da carga.':'Ampacidade inferior à corrente da carga.');status('dropState',d.dropOK,d.dropOK?'Queda dentro do limite configurado.':'Queda superior ao limite configurado.');
+$('iz0Cell').textContent=fr(d.iz0)+' A';$('ftCell').textContent=fr(d.ft);$('fgCell').textContent=fr(d.fg);$('resCell').textContent=fr(d.rKm,4)+' Ω/km';$('marginCell').textContent=fr(d.iz-d.ib)+' A';
+const good=d.ampOK&&d.dropOK;
+$('summary').className='summary'+(good?'':' bad');$('summary').innerHTML='<strong>'+ (good?'Verificações preliminares atendidas':'Uma ou mais verificações não atendidas') +'</strong><span>'+(good?'A seção atende aos dois critérios simulados. Isso não representa aprovação integral do dimensionamento.':'Revise seção, instalação, agrupamento, trajeto ou demais parâmetros antes de utilizar esta solução.')+'</span>';
+if(d.loadVoltage<0)$('summary').lastChild.textContent+=' A queda de tensão calculada supera a tensão nominal: aplicação fora do intervalo útil deste modelo.';
+memory=makeMemory(d);
+try{localStorage.setItem('calc_eletrica_offline_v1',JSON.stringify(d.v))}catch(e){}
+}
+function namedGroup(value){return ({'9':'9 a 11','12':'12 a 15','16':'16 a 19','20':'20 ou mais'})[value]||value}
+function makeRows(d){return [
+['Configuração',d.v.system==='three'?'Trifásico equilibrado':'Dois condutores (F+N / F+F)'],['Potência ativa',fr(d.p)+' W'],['Tensão nominal',fr(d.u)+' V'],['Fator de potência',fr(d.fp)],['Comprimento físico de ida',fr(d.len)+' m'],['Material',d.v.material==='cu'?'Cobre':'Alumínio'],['Isolação',d.v.insulation==='pvc'?'PVC 70 °C':'EPR / XLPE 90 °C'],['Seção nominal',fr(d.s)+' mm²'],['Método de referência',d.v.method],['Condutores carregados',d.v.system==='three'?'3':'2'],['Temperatura do ar',d.v.ambient+' °C'],['Circuitos agrupados',namedGroup(d.v.group)],['Arranjo',d.v.arrangement==='bundle'?'Feixe / conduto fechado':'Camada única sobre parede / piso / bandeja não perfurada'],['Limite configurado de queda',d.v.limit+'%'],['Corrente da carga (Ib)',fr(d.ib,3)+' A'],['Capacidade tabelada (Iz₀)',fr(d.iz0,3)+' A'],['Fator de temperatura (Ft)',fr(d.ft)],['Fator de agrupamento (Fg)',fr(d.fg)],['Capacidade corrigida (Iz)',fr(d.iz,3)+' A'],['Margem Iz − Ib',fr(d.iz-d.ib,3)+' A'],['Utilização de Iz',fr(d.ratio,2)+'%'],['Resistência estimada à temperatura de cálculo',fr(d.rKm,5)+' Ω/km'],['Temperatura usada para a resistência',d.temperature+' °C'],['Reatância aproximada',fr(d.xKm,3)+' Ω/km'],['Queda de tensão',fr(d.delta,3)+' V'],['Queda percentual',fr(d.dropPercent,3)+'%'],['Tensão estimada na carga',fr(d.loadVoltage,3)+' V'],['Critério Ib ≤ Iz',d.ampOK?'ATENDIDO':'NÃO ATENDIDO'],['Queda ≤ limite configurado',d.dropOK?'ATENDIDO':'NÃO ATENDIDO']];}
+function makeMemory(d){const lines=['MEMÓRIA DE CÁLCULO ELÉTRICO','Calculadora offline — resultado preliminar','Emissão: '+new Date().toLocaleString('pt-BR'),'','DADOS E RESULTADOS',...makeRows(d).map(([k,v])=>k+': '+v),'','FÓRMULAS','Ib = P / (k · U · cosφ), k=1 (dois condutores) ou √3 (trifásico).','Iz = Iz₀ · Ft · Fg.','ΔU ≈ q · Ib · (L/1000) · (R · cosφ + X · senφ), q=2 ou √3, R e X em Ω/km.','','PREMISSAS E LIMITAÇÕES','ABNT NBR 5410:2004, tabelas 33, 36, 37, 40 e 42.','A reatância X foi fixada em 0,08 Ω/km, valor estimativo.','Usa resistência na temperatura nominal de operação da isolação.','A queda representada é apenas do circuito informado, sem trechos a montante.','Não verifica correntes de curto-circuito, disjuntores, neutro, harmônicas, seções mínimas, instalação em eletrocalhas perfuradas, leitos ou enterramento.','A avaliação não substitui dimensionamento técnico completo.'];return lines.join('\n')}
+function preparePrint(){if(!currentData||currentData.errors.length)return;const rows=makeRows(currentData);$('printDate').textContent=new Date().toLocaleString('pt-BR');$('printDetails').innerHTML='<h2>Parâmetros e resultados</h2><table>'+rows.map(([a,b])=>'<tr><td>'+escapeHTML(a)+'</td><td>'+escapeHTML(b)+'</td></tr>').join('')+'</table><h2>Equações consideradas</h2><p>Ib = P / (k · U · cosφ); Iz = Iz₀ · Ft · Fg; ΔU ≈ q · Ib · (L/1000) · (R · cosφ + X · senφ).</p>'}
+function escapeHTML(x){return String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c])}
+function printDoc(){preparePrint();window.print()}
+function toast(s){$('toast').textContent=s;$('toast').classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('toast').classList.remove('show'),2100)}
+async function copyMemory(){if(!memory)return;try{await navigator.clipboard.writeText(memory);toast('Memória copiada para a área de transferência.')}catch(e){const t=document.createElement('textarea');t.value=memory;t.setAttribute('readonly','');t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.select();const success=document.execCommand('copy');document.body.removeChild(t);toast(success?'Memória copiada.':'Cópia automática indisponível. Selecione o texto em “Ver memória”.')}}
+function openMemory(){$('memoryText').textContent=memory;$('modalBg').classList.add('open');$('closeModal').focus()}
+function closeMemory(){$('modalBg').classList.remove('open');$('memoryBtn').focus()}
+function applyValues(v){for(const id of fieldIds){if(id==='section')continue;if(v[id]!==undefined&&Array.from($(id).options||[]).some(o=>o.value===String(v[id]))||v[id]!==undefined&&$(id).tagName==='INPUT')$(id).value=String(v[id])}optionSize();if(v.section!==undefined&&Array.from($('section').options).some(o=>o.value===String(v.section)))$('section').value=String(v.section);if(v.system==='three')document.querySelector('input[name="system"][value="three"]').checked=true;else document.querySelector('input[name="system"][value="two"]').checked=true;optionArrangement();display()}
+function reset(){try{localStorage.removeItem('calc_eletrica_offline_v1')}catch(e){};applyValues(defaultValues)}
+$('material').addEventListener('change',()=>{optionSize();display()});$('method').addEventListener('change',()=>{optionArrangement();display()});$('arrangement').addEventListener('change',()=>{optionArrangement();display()});
+document.querySelectorAll('#form input:not([name="system"]),#form select').forEach(el=>{if(['material','method','arrangement'].includes(el.id))return;el.addEventListener('input',display);el.addEventListener('change',display)});
+document.querySelectorAll('input[name="system"]').forEach(el=>el.addEventListener('change',()=>{if(el.checked){const volt=Number($('voltage').value);if(el.value==='three'&&volt===220)$('voltage').value='380';if(el.value==='two'&&volt===380)$('voltage').value='220';display()}}));
+$('resetBtn').addEventListener('click',reset);$('printBtn').addEventListener('click',printDoc);$('printBtn2').addEventListener('click',printDoc);$('copyBtn').addEventListener('click',copyMemory);$('memoryBtn').addEventListener('click',openMemory);$('closeModal').addEventListener('click',closeMemory);$('modalCopy').addEventListener('click',copyMemory);$('modalPrint').addEventListener('click',printDoc);$('modalBg').addEventListener('click',e=>{if(e.target===$('modalBg'))closeMemory()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('modalBg').classList.contains('open'))closeMemory()});
+let saved=null;try{saved=JSON.parse(localStorage.getItem('calc_eletrica_offline_v1')||'null')}catch(e){}applyValues(saved&&typeof saved==='object'?{...defaultValues,...saved}:defaultValues);
+
+// Progressive Web App: no dependencies, no analytics, network calls only for the app-shell/update.
+(() => {
+  const button = document.getElementById('installBtn');
+  const modal = document.getElementById('installModal');
+  const close = document.getElementById('closeInstall');
+  const done = document.getElementById('installDone');
+  const promptButton = document.getElementById('installNow');
+  const status = document.getElementById('installStatus');
+  const networkStatus = document.getElementById('connectionStatus');
+  const standalone = () => window.matchMedia('(display-mode: standalone)').matches || !!window.navigator.standalone;
+  let installEvent = null;
+  let previousFocus = null;
+  function updateNet() { networkStatus.textContent = navigator.onLine ? 'Conectividade: online' : 'Conectividade: offline'; }
+  function updateState() {
+    if (standalone()) {
+      button.textContent = '✓ Aplicativo instalado';
+      status.textContent = 'Este aplicativo está aberto em modo instalado.';
+      promptButton.hidden = true;
+    } else if (location.protocol === 'file:') {
+      status.textContent = 'Este arquivo permite usar a calculadora, mas a instalação PWA requer publicação em HTTPS.';
+      promptButton.hidden = true;
+    } else if (!window.isSecureContext) {
+      status.textContent = 'Para instalar, acesse a calculadora por HTTPS. O endereço local localhost é permitido para testes.';
+      promptButton.hidden = true;
+    } else if (installEvent) {
+      status.textContent = 'O navegador disponibilizou instalação direta. Use o botão abaixo.';
+      promptButton.hidden = false;
+    } else {
+      status.textContent = 'Use a opção de instalação no menu do navegador ou siga as instruções do seu dispositivo.';
+      promptButton.hidden = true;
+    }
+  }
+  function openInstall() { previousFocus = document.activeElement; updateState(); modal.classList.add('open'); modal.setAttribute('aria-hidden','false'); close.focus(); }
+  function closeInstall() { modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); (previousFocus || button).focus(); }
+  button.addEventListener('click',openInstall);
+  close.addEventListener('click',closeInstall);
+  done.addEventListener('click',closeInstall);
+  modal.addEventListener('click', e => { if(e.target === modal)closeInstall(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape' && modal.classList.contains('open'))closeInstall(); });
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvent = e; updateState(); });
+  promptButton.addEventListener('click', async () => {
+    if(!installEvent)return;
+    const pending = installEvent;
+    installEvent = null;
+    promptButton.hidden = true;
+    pending.prompt();
+    try { await pending.userChoice; } catch(e) { /* browser may not expose the result */ }
+    updateState();
+  });
+  window.addEventListener('appinstalled', () => { installEvent = null; updateState(); closeInstall(); });
+  window.addEventListener('online',updateNet);
+  window.addEventListener('offline',updateNet);
+  updateNet(); updateState();
+  if ('serviceWorker' in navigator && window.isSecureContext && location.protocol !== 'file:') {
+    window.addEventListener('load', async () => {
+      try {
+        const reg = await navigator.serviceWorker.register('./sw.js', {scope:'./',updateViaCache:'none'});
+        // Service worker checks for updates upon new visits; no recurring network polling.
+        reg.update().catch(()=>{});
+      } catch (err) { console.warn('Cache offline não disponível neste navegador:',err); }
+    });
+  }
+})();
+
+</script>
+</body></html>

@@ -1,0 +1,52 @@
+# CALCULADORA ELÉTRICA RD — PWA 1.0
+
+Aplicativo web progressivo, com interface em português, gratuito para uso local, sem bibliotecas externas.
+
+## Conteúdo do pacote
+
+- `index.html`: interface e cálculos elétricos, inteiramente locais.
+- `manifest.json`: dados de instalação do aplicativo.
+- `sw.js`: service worker que mantém arquivos no cache para uso offline.
+- `icons/`: ícones PNG para iPhone, Android e Windows.
+
+## Como publicar gratuitamente (GitHub Pages)
+
+1. Crie um repositório no GitHub, por exemplo `calculadora-eletrica-rd`.
+2. Envie **o conteúdo desta pasta** para a raiz do repositório: `index.html`, `sw.js`, `manifest.json`, diretório `icons/`. Não suba o ZIP fechado como único arquivo.
+3. No repositório: **Settings > Pages > Build and deployment > Deploy from a branch**. Selecione `main` e diretório `/(root)`; salve.
+4. Use o endereço HTTPS informado em Settings > Pages. Em geral, terá estrutura `https://USUARIO.github.io/calculadora-eletrica-rd/`.
+5. Abra uma vez com internet. Depois, instale pelo navegador e teste em modo avião.
+
+Não precisa de servidor de backend, banco de dados ou conta dos usuários. A hospedagem de arquivos estáticos registra acessos segundo as políticas do provedor, mas os parâmetros e cálculos não são enviados pelo código desta aplicação.
+
+## Instalação
+
+**iPhone / iPad (Safari):** abrir URL HTTPS > Compartilhar > Adicionar à Tela de Início > habilitar "Abrir como App da Web" (quando aparecer) > Adicionar.
+
+**Galaxy Tab / Android:** abrir URL HTTPS no Chrome ou Samsung Internet > menu > Instalar aplicativo ou Adicionar à Tela inicial.
+
+**Windows:** abrir URL HTTPS no Chrome/Edge > menu > Instalar aplicativo / Aplicativos > Instalar.
+
+## Funcionamento offline
+
+- A primeira visita exige internet para carregar os arquivos da hospedagem; depois da instalação, abra também o aplicativo instalado ao menos uma vez com internet, especialmente no iPhone.
+- O service worker guarda HTML, manifesto e ícones. Depois de instalado, a calculadora pode abrir sem internet, inclusive com o navegador fechado.
+- Dados de entrada ficam salvos apenas no armazenamento local do navegador instalado. Desinstalar, limpar dados do site ou trocar de dispositivo pode eliminar os valores salvos.
+- Se o sistema operacional remover o cache por falta de espaço, uma nova abertura online pode ser necessária.
+- Atualizações exigem acesso à internet e, em alguns navegadores, fechar/reabrir o aplicativo.
+
+## Teste local no Windows (opcional)
+
+Na pasta extraída, execute:
+
+    python -m http.server 8000
+
+Acesse `http://localhost:8000` no próprio computador. Não basta clicar duas vezes no HTML para testar recursos de instalação PWA. Em uma rede local, o endereço HTTP do computador geralmente não qualifica como contexto seguro no navegador do celular; use HTTPS para testar instalação móvel.
+
+## Restrições técnicas
+
+Trata-se de uma ferramenta **preliminar**. Considera métodos B1, B2 e C (PVC 70 °C ou EPR/XLPE 90 °C), fatores de temperatura ambiente e agrupamento nas disposições selecionadas, e queda de tensão aproximada. O modelo não verifica coordenação com disjuntores, curto-circuito, harmônicas, seção mínima, eletrocalha perfurada, leito, enterramento nem queda acumulada de alimentadores anteriores. As tabelas são referências da ABNT NBR 5410:2004 e devem ser conferidas antes de uso em projetos formais.
+
+## Atualização futura
+
+Edite os arquivos e mude `CACHE` em `sw.js` (ex.: `v1.0.1`) quando alterar recursos importantes do aplicativo. Faça upload das alterações mantendo os caminhos e os nomes. Teste o cache antigo/offline depois de cada publicação. Não adicione dependências de CDN se desejar preservar funcionamento offline.
