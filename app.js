@@ -1,6 +1,6 @@
 'use strict';
 
-// Calculadora Elétrica RD PWA 1.2
+// Calculadora Elétrica RD PWA 1.2.1
 // Dados de ampacidade: tabelas 36 e 37 da ABNT NBR 5410:2004.
 const SECTIONS=[1.5,2.5,4,6,10,16,25,35,50,70,95,120,150,185,240];
 const BREAKERS=[6,10,16,20,25,32,40,50,63,80,100,125,160,200,250,315,400];
@@ -158,7 +158,7 @@ function namedGroup(value){return ({'9':'9 a 11','12':'12 a 15','16':'16 a 19','
 function makeRows(d){return [
   ['Projeto / obra',d.v.projectName||'Não informado'],['Circuito',d.v.circuitName||'Não informado'],['Configuração',d.v.system==='three'?'Trifásico equilibrado':'Dois condutores (F+N / F+F)'],['Potência ativa',fr(d.p)+' W'],['Tensão nominal',fr(d.u)+' V'],['Fator de potência',fr(d.fp)],['Corrente da carga (Ib)',fr(d.ib,3)+' A'],['Trecho final — comprimento',fr(d.primary.length)+' m'],['Trecho final — material',d.v.material==='cu'?'Cobre':'Alumínio'],['Trecho final — isolação',d.v.insulation==='pvc'?'PVC 70 °C':'EPR / XLPE 90 °C'],['Trecho final — seção aplicada',fr(d.primary.section)+' mm² ('+(d.sectionAuto?'automática':'manual')+')'],['Trecho final — método',d.v.method],['Trecho final — temperatura',d.v.ambient+' °C'],['Trecho final — agrupamento',namedGroup(d.v.group)],['Capacidade tabelada final (Iz₀)',fr(d.primary.iz0,3)+' A'],['Capacidade corrigida final (Iz)',fr(d.primary.iz,3)+' A'],['Menor Iz do percurso',fr(d.minIz,3)+' A'],['Disjuntor aplicado (In)',fr(d.breaker,0)+' A ('+(d.breakerAuto?'automático':'manual')+')'],['Coordenação Ib ≤ In ≤ Iz',d.breakerOK?'ATENDIDA':'NÃO ATENDIDA'],['Queda no trecho final',fr(d.primary.delta,3)+' V / '+fr(d.terminalDropPercent,3)+'%'],['Queda nos trechos anteriores',fr(d.upstreamDelta,3)+' V'],['Queda acumulada',fr(d.delta,3)+' V / '+fr(d.dropPercent,3)+'%'],['Tensão estimada na carga',fr(d.loadVoltage,3)+' V'],['Limite configurado',d.v.limit+'%'],['Seção automática sugerida',d.recommendedSection?fr(d.recommendedSection)+' mm²':'Sem solução'],['Disjuntor sugerido',d.recommendedBreaker?d.recommendedBreaker+' A':'Sem solução'],['Ampacidade em todos os trechos',d.ampOK?'ATENDIDA':'NÃO ATENDIDA'],['Queda acumulada ≤ limite',d.dropOK?'ATENDIDA':'NÃO ATENDIDA']];}
 function segmentRows(d){return d.upstream.map(({config,result},index)=>[config.name||`Trecho ${index+1}`,`${fr(result.length)} m • ${config.material==='cu'?'Cu':'Al'} • ${fr(result.section)} mm² • ${config.method} • Iz ${fr(result.iz)} A • ΔU ${fr(result.delta)} V • ${result.ampOK?'OK':'REVISAR'}`]);}
-function makeMemory(d){const lines=['MEMÓRIA DE CÁLCULO ELÉTRICO','Calculadora Elétrica RD — PWA 1.2','Emissão: '+new Date().toLocaleString('pt-BR'),'','DADOS E RESULTADOS',...makeRows(d).map(([k,v])=>k+': '+v)];if(d.upstream.length)lines.push('','TRECHOS ANTERIORES',...segmentRows(d).map(([k,v])=>k+': '+v));lines.push('','FÓRMULAS','Ib = P / (k · U · cosφ), k=1 (dois condutores) ou √3 (trifásico).','Iz = Iz₀ · Ft · Fg.','ΔU total = soma das quedas de todos os trechos.','Verificação preliminar da proteção: Ib ≤ In ≤ menor Iz do percurso.','','PREMISSAS E LIMITAÇÕES','ABNT NBR 5410:2004, tabelas 33, 36, 37, 40 e 42.','A reatância X foi fixada em 0,08 Ω/km, valor estimativo.','A recomendação automática não verifica seção mínima, curto-circuito, poder de interrupção, seletividade, harmônicas, neutro ou dados específicos do fabricante.','A avaliação não substitui dimensionamento técnico completo.');return lines.join('\n');}
+function makeMemory(d){const lines=['MEMÓRIA DE CÁLCULO ELÉTRICO','Calculadora Elétrica RD — PWA 1.2.1','Emissão: '+new Date().toLocaleString('pt-BR'),'','DADOS E RESULTADOS',...makeRows(d).map(([k,v])=>k+': '+v)];if(d.upstream.length)lines.push('','TRECHOS ANTERIORES',...segmentRows(d).map(([k,v])=>k+': '+v));lines.push('','FÓRMULAS','Ib = P / (k · U · cosφ), k=1 (dois condutores) ou √3 (trifásico).','Iz = Iz₀ · Ft · Fg.','ΔU total = soma das quedas de todos os trechos.','Verificação preliminar da proteção: Ib ≤ In ≤ menor Iz do percurso.','','PREMISSAS E LIMITAÇÕES','ABNT NBR 5410:2004, tabelas 33, 36, 37, 40 e 42.','A reatância X foi fixada em 0,08 Ω/km, valor estimativo.','A recomendação automática não verifica seção mínima, curto-circuito, poder de interrupção, seletividade, harmônicas, neutro ou dados específicos do fabricante.','A avaliação não substitui dimensionamento técnico completo.');return lines.join('\n');}
 
 function preparePrint(){
   if(!currentData||currentData.errors.length)return;
@@ -212,6 +212,12 @@ $('printBtn').addEventListener('click',printDoc);$('printBtn2').addEventListener
 let persisted=null;try{persisted=JSON.parse(localStorage.getItem('calc_eletrica_offline_v12')||'null');}catch(e){}
 if(persisted?.values){segments=(persisted.segments||[]).map(normalizeSegment);applyValues(persisted.values);}else{let prior=null;try{prior=JSON.parse(localStorage.getItem('calc_eletrica_offline_v11')||'null');}catch(e){}if(prior?.values){segments=(prior.segments||[]).map(normalizeSegment);applyValues({...prior.values,section:'auto',breaker:'auto'});}else{let legacy=null;try{legacy=JSON.parse(localStorage.getItem('calc_eletrica_offline_v1')||'null');}catch(e){}applyValues({...defaultValues,...(legacy&&typeof legacy==='object'?legacy:{}),section:'auto',breaker:'auto'});}}
 renderSegments();display();
+
+// Mantém a escala estável em iPhone/iPad: bloqueia gestos de pinça que escapem
+// das regras de viewport e evita o zoom por duplo toque nos controles.
+for(const eventName of ['gesturestart','gesturechange','gestureend']){
+  document.addEventListener(eventName,event=>event.preventDefault(),{passive:false});
+}
 
 // Instalação e atualização do PWA.
 (()=>{
