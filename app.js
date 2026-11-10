@@ -1,6 +1,6 @@
 'use strict';
 
-// Calculadora Elétrica RD PWA 1.3
+// Calculadora Elétrica RD PWA 1.3.1
 // Dados de ampacidade: tabelas 36 e 37 da ABNT NBR 5410:2004.
 const SECTIONS=[1.5,2.5,4,6,10,16,25,35,50,70,95,120,150,185,240];
 const BREAKERS=[6,10,16,20,25,32,40,50,63,80,100,125,160,200,250,315,400];
@@ -185,7 +185,7 @@ function namedGroup(value){return ({'9':'9 a 11','12':'12 a 15','16':'16 a 19','
 function makeRows(d){return [
   ['Projeto / obra',d.v.projectName||'Não informado'],['Circuito',d.v.circuitName||'Não informado'],['Configuração',d.v.system==='three'?'Trifásico equilibrado':'Dois condutores (F+N / F+F)'],['Potência ativa',fr(d.p)+' W'],['Tensão nominal',fr(d.u)+' V'],['Fator de potência',fr(d.fp)],['Corrente da carga (Ib)',fr(d.ib,3)+' A'],['Trecho final — comprimento',fr(d.primary.length)+' m'],['Trecho final — material',d.v.material==='cu'?'Cobre':'Alumínio'],['Trecho final — isolação',d.v.insulation==='pvc'?'PVC 70 °C':'EPR / XLPE 90 °C'],['Trecho final — seção aplicada',fr(d.primary.section)+' mm² ('+(d.sectionAuto?'automática':'manual')+')'],['Trecho final — método',d.v.method],['Trecho final — temperatura',d.v.ambient+' °C'],['Trecho final — agrupamento',namedGroup(d.v.group)],['Capacidade tabelada final (Iz₀)',fr(d.primary.iz0,3)+' A'],['Capacidade corrigida final (Iz)',fr(d.primary.iz,3)+' A'],['Menor Iz do percurso',fr(d.minIz,3)+' A'],['Disjuntor aplicado (In)',fr(d.breaker,0)+' A ('+(d.breakerAuto?'automático':'manual')+')'],['Coordenação Ib ≤ In ≤ Iz',d.breakerOK?'ATENDIDA':'NÃO ATENDIDA'],['Queda no trecho final',fr(d.primary.delta,3)+' V / '+fr(d.terminalDropPercent,3)+'%'],['Queda nos trechos anteriores',fr(d.upstreamDelta,3)+' V'],['Queda acumulada',fr(d.delta,3)+' V / '+fr(d.dropPercent,3)+'%'],['Tensão estimada na carga',fr(d.loadVoltage,3)+' V'],['Limite configurado',d.v.limit+'%'],['Seção automática sugerida',d.recommendedSection?fr(d.recommendedSection)+' mm²':'Sem solução'],['Disjuntor sugerido',d.recommendedBreaker?d.recommendedBreaker+' A':'Sem solução'],['Ampacidade em todos os trechos',d.ampOK?'ATENDIDA':'NÃO ATENDIDA'],['Queda acumulada ≤ limite',d.dropOK?'ATENDIDA':'NÃO ATENDIDA']];}
 function segmentRows(d){return d.upstream.map(({config,result},index)=>[config.name||`Trecho ${index+1}`,`${fr(result.length)} m • ${config.material==='cu'?'Cu':'Al'} • ${fr(result.section)} mm² • ${config.method} • Iz ${fr(result.iz)} A • ΔU ${fr(result.delta)} V • ${result.ampOK?'OK':'REVISAR'}`]);}
-function makeMemory(d){const lines=['MEMÓRIA DE CÁLCULO ELÉTRICO','Calculadora Elétrica RD — PWA 1.3','Emissão: '+new Date().toLocaleString('pt-BR'),'','DADOS E RESULTADOS',...makeRows(d).map(([k,v])=>k+': '+v)];if(d.upstream.length)lines.push('','TRECHOS ANTERIORES',...segmentRows(d).map(([k,v])=>k+': '+v));lines.push('','FÓRMULAS','Ib = P / (k · U · cosφ), k=1 (dois condutores) ou √3 (trifásico).','Iz = Iz₀ · Ft · Fg.','ΔU total = soma das quedas de todos os trechos.','Verificação preliminar da proteção: Ib ≤ In ≤ menor Iz do percurso.','','PREMISSAS E LIMITAÇÕES','ABNT NBR 5410:2004, tabelas 33, 36, 37, 40 e 42.','A reatância X foi fixada em 0,08 Ω/km, valor estimativo.','A recomendação automática não verifica seção mínima, curto-circuito, poder de interrupção, seletividade, harmônicas, neutro ou dados específicos do fabricante.','A avaliação não substitui dimensionamento técnico completo.');return lines.join('\n');}
+function makeMemory(d){const lines=['MEMÓRIA DE CÁLCULO ELÉTRICO','Calculadora Elétrica RD — PWA 1.3.1','Emissão: '+new Date().toLocaleString('pt-BR'),'','DADOS E RESULTADOS',...makeRows(d).map(([k,v])=>k+': '+v)];if(d.upstream.length)lines.push('','TRECHOS ANTERIORES',...segmentRows(d).map(([k,v])=>k+': '+v));lines.push('','FÓRMULAS','Ib = P / (k · U · cosφ), k=1 (dois condutores) ou √3 (trifásico).','Iz = Iz₀ · Ft · Fg.','ΔU total = soma das quedas de todos os trechos.','Verificação preliminar da proteção: Ib ≤ In ≤ menor Iz do percurso.','','PREMISSAS E LIMITAÇÕES','ABNT NBR 5410:2004, tabelas 33, 36, 37, 40 e 42.','A reatância X foi fixada em 0,08 Ω/km, valor estimativo.','A recomendação automática não verifica seção mínima, curto-circuito, poder de interrupção, seletividade, harmônicas, neutro ou dados específicos do fabricante.','A avaliação não substitui dimensionamento técnico completo.');return lines.join('\n');}
 
 function preparePrint(){
   if(!currentData||currentData.errors.length)return;
@@ -193,7 +193,28 @@ function preparePrint(){
   $('printDate').textContent=new Date().toLocaleString('pt-BR');
   $('printDetails').innerHTML='<h2>'+escapeHTML(d.v.projectName||'Projeto')+' — '+escapeHTML(d.v.circuitName||'Circuito')+'</h2><table>'+rows.map(([a,b])=>'<tr><td>'+escapeHTML(a)+'</td><td>'+escapeHTML(b)+'</td></tr>').join('')+'</table>'+segmentsHTML+'<h2>Equações consideradas</h2><p>Ib = P / (k · U · cosφ); Iz = Iz₀ · Ft · Fg; ΔU total = soma das quedas dos trechos; proteção preliminar: Ib ≤ In ≤ menor Iz.</p>';
 }
-function printDoc(){preparePrint();window.print();}
+function pdfAscii(value){return String(value).replace(/≤/g,'<=').replace(/≥/g,'>=').replace(/Δ/g,'Delta ').replace(/Ω/g,'ohm').replace(/φ/g,'phi').replace(/√/g,'sqrt').replace(/²/g,'^2').replace(/₀/g,'0').replace(/[—–−]/g,'-').replace(/•/g,'-').replace(/×/g,'x').replace(/·/g,'x').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7E\n]/g,'?');}
+function wrapPdfLine(line,width=88){if(!line)return[''];const out=[];let rest=line;while(rest.length>width){let cut=rest.lastIndexOf(' ',width);if(cut<width*.55)cut=width;out.push(rest.slice(0,cut));rest=rest.slice(cut).trimStart();}out.push(rest);return out;}
+function makePdfBlob(text){
+  const lines=pdfAscii(text).split('\n').flatMap(line=>wrapPdfLine(line)),perPage=58,pages=[];
+  for(let i=0;i<lines.length;i+=perPage)pages.push(lines.slice(i,i+perPage));
+  if(!pages.length)pages.push(['Relatorio sem conteudo.']);
+  const objects=[],pageIds=[];objects[1]='<< /Type /Catalog /Pages 2 0 R >>';objects[3]='<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>';
+  pages.forEach((page,index)=>{const pageId=4+index*2,contentId=pageId+1;pageIds.push(pageId);const printable=[...page,`Pagina ${index+1} de ${pages.length}`].map(line=>'('+line.replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)')+') Tj\nT*').join('');const stream=`BT\n/F1 8 Tf\n40 805 Td\n11 TL\n${printable}ET\n`;objects[pageId]=`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentId} 0 R >>`;objects[contentId]=`<< /Length ${stream.length} >>\nstream\n${stream}endstream`;});
+  objects[2]=`<< /Type /Pages /Count ${pages.length} /Kids [${pageIds.map(id=>id+' 0 R').join(' ')}] >>`;
+  let pdf='%PDF-1.4\n',offsets=[0];const count=objects.length-1;
+  for(let id=1;id<=count;id++){offsets[id]=pdf.length;pdf+=`${id} 0 obj\n${objects[id]}\nendobj\n`;}
+  const xref=pdf.length;pdf+=`xref\n0 ${count+1}\n0000000000 65535 f \n`;for(let id=1;id<=count;id++)pdf+=String(offsets[id]).padStart(10,'0')+' 00000 n \n';pdf+=`trailer\n<< /Size ${count+1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  return new Blob([pdf],{type:'application/pdf'});
+}
+function pdfFilename(){const raw=((currentData?.v.projectName||'Projeto')+'-'+(currentData?.v.circuitName||'Circuito')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9_-]+/g,'-').replace(/^-+|-+$/g,'');return (raw||'calculo-eletrico')+'.pdf';}
+function downloadPdf(file){const url=URL.createObjectURL(file),link=document.createElement('a');link.href=url;link.download=file.name;link.target='_blank';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);toast('PDF gerado. Use Compartilhar ou Salvar em Arquivos.');}
+async function exportPdf(){
+  if(!memory)return;const blob=makePdfBlob(memory),file=new File([blob],pdfFilename(),{type:'application/pdf'}),shareData={files:[file],title:'Memória de cálculo elétrico'};
+  if(navigator.share&&navigator.canShare?.(shareData)){try{await navigator.share(shareData);return;}catch(error){if(error?.name==='AbortError')return;}}
+  downloadPdf(file);
+}
+function printDoc(){const mobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&matchMedia('(max-width: 890px)').matches)||matchMedia('(display-mode: standalone)').matches;if(mobile){exportPdf();return;}preparePrint();window.print();}
 function toast(message){$('toast').textContent=message;$('toast').classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('toast').classList.remove('show'),2400);}
 async function copyMemory(){if(!memory)return;try{await navigator.clipboard.writeText(memory);toast('Memória copiada para a área de transferência.');}catch(e){const t=document.createElement('textarea');t.value=memory;t.setAttribute('readonly','');t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.select();const success=document.execCommand('copy');document.body.removeChild(t);toast(success?'Memória copiada.':'Cópia automática indisponível.');}}
 function openMemory(){$('memoryText').textContent=memory;$('modalBg').classList.add('open');$('closeModal').focus();}
